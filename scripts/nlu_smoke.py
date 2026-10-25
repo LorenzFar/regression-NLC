@@ -48,7 +48,7 @@ def main(argv=None):
     }
     start = time.perf_counter()
     try:
-        from buyer_agent.nlu import NLUAdapter
+        from retrieval_pipeline.nlu_adapter import NLUAdapter
 
         adapter = NLUAdapter(args.checkpoint, model_name=args.model_name, device=args.device,
                              local_files_only=args.offline)

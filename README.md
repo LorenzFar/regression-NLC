@@ -27,7 +27,7 @@ For real NLU, copy the team's `nlu_k2_s0.pt` to `models/`. Its SHA-256 is `41758
 
 ```powershell
 .\.venv\Scripts\python.exe -m examples.standalone_contract --checkpoint models/nlu_k2_s0.pt --output artifacts/standalone-demo.jsonl
-.\.venv\Scripts\python.exe -m buyer_agent.replay examples/standalone_cases.jsonl --checkpoint models/nlu_k2_s0.pt --bank examples/approved_fixture_bank.jsonl --output artifacts/standalone-replay.jsonl
+.\.venv\Scripts\python.exe -m retrieval_pipeline.replay examples/standalone_cases.jsonl --checkpoint models/nlu_k2_s0.pt --bank examples/approved_fixture_bank.jsonl --output artifacts/standalone-replay.jsonl
 ```
 
 The demo covers two retrieval matches, one fixed fallback, and one clarification. Replay runs the cases in three gate modes. `--checkpoint` replaces only scripted NLU; unfinished components remain scripted. Missing resources produce an error, not synthetic predictions. Models and generated traces stay out of Git.
@@ -37,19 +37,19 @@ The demo covers two retrieval matches, one fixed fallback, and one clarification
 | File | Responsibility |
 |---|---|
 | `nlu.py` | Team NLU: masking, checkpoint loading, seller-act predictions |
-| `buyer_agent/nlu.py` | Pipeline NLU adapter and resource metadata |
-| `buyer_agent/contracts.py` | Public turn, buyer action, and reply types |
-| `buyer_agent/generator.py` | Action-compatible retrieval and fixed wording |
-| `buyer_agent/bank.py` | Prepare, approve, validate, and load response banks |
-| `buyer_agent/pipeline.py` | Run one turn and publish state/history together |
-| `buyer_agent/fixtures.py` | Scripted collaborators for examples and tests |
-| `buyer_agent/replay.py` | Independent recorded cases and JSONL export |
+| `retrieval_pipeline/nlu_adapter.py` | Pipeline NLU adapter and resource metadata |
+| `retrieval_pipeline/contracts.py` | Public turn, buyer action, and reply types |
+| `retrieval_pipeline/generator.py` | Action-compatible retrieval and fixed wording |
+| `retrieval_pipeline/bank.py` | Prepare, approve, validate, and load response banks |
+| `retrieval_pipeline/pipeline.py` | Run one turn and publish state/history together |
+| `retrieval_pipeline/fixtures.py` | Scripted collaborators for examples and tests |
+| `retrieval_pipeline/replay.py` | Independent recorded cases and JSONL export |
 | `examples/`, `tests/` | Runnable contracts, authored cases, and regression tests |
 
 ## Generator contract
 
 ```python
-from buyer_agent import PolicyDecision, RetrievalGenerator
+from retrieval_pipeline import PolicyDecision, RetrievalGenerator
 
 generator = RetrievalGenerator("examples/approved_fixture_bank.jsonl")
 result = generator.generate(
@@ -76,7 +76,7 @@ Results include `text`, `action`, `price`, `template_id`, `source`, `similarity`
 ## Pipeline contract
 
 ```python
-from buyer_agent.pipeline import Pipeline, Session
+from retrieval_pipeline.pipeline import Pipeline, Session
 
 pipeline = Pipeline(nlu=nlu, price_reference=price_reference, gate=gate,
                     policy=policy, tracker=tracker, generator=generator)
@@ -103,10 +103,10 @@ Use only buyer responses from an authoritative training-dialogue allowlist. Neve
 
 ```powershell
 .\.venv\Scripts\python.exe -m examples.retrieval_contract --export-sources artifacts/bank-work
-.\.venv\Scripts\python.exe -m buyer_agent.bank prepare artifacts/bank-work/sources.jsonl artifacts/bank-work/candidates.jsonl --train-ids artifacts/bank-work/train-ids.json
+.\.venv\Scripts\python.exe -m retrieval_pipeline.bank prepare artifacts/bank-work/sources.jsonl artifacts/bank-work/candidates.jsonl --train-ids artifacts/bank-work/train-ids.json
 # Inspect candidates and save only selected rows as reviewed.jsonl.
-.\.venv\Scripts\python.exe -m buyer_agent.bank approve artifacts/bank-work/reviewed.jsonl artifacts/bank-work/approved.jsonl --reviewer "Reviewer name"
-.\.venv\Scripts\python.exe -m buyer_agent.bank build artifacts/bank-work/approved.jsonl artifacts/bank-work/bank.jsonl --train-ids artifacts/bank-work/train-ids.json
+.\.venv\Scripts\python.exe -m retrieval_pipeline.bank approve artifacts/bank-work/reviewed.jsonl artifacts/bank-work/approved.jsonl --reviewer "Reviewer name"
+.\.venv\Scripts\python.exe -m retrieval_pipeline.bank build artifacts/bank-work/approved.jsonl artifacts/bank-work/bank.jsonl --train-ids artifacts/bank-work/train-ids.json
 ```
 
 The exported sources above are authored examples. Corpus sources need stable `template_id`, `dialogue_id`, `turn_id`, `origin="corpus"`, `split="train"`, `speaker="BUYER"`, explicit buyer `action`, preceding `history`, seller `message`, buyer `response`, and explicit false `mixed_action`/`unresolved_reference` flags. Priced actions need one validated `{start, end, value, validated: true}` price span; reject needs none. Offsets use Python characters with an exclusive end. The value must match the bare decimal substring exactly.

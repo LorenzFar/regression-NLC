@@ -167,7 +167,7 @@ def main(argv=None):
     try:
         nlu = None
         if args.checkpoint:
-            from .nlu import NLUAdapter
+            from .nlu_adapter import NLUAdapter
             nlu = NLUAdapter(args.checkpoint, model_name=args.model_name, device=args.device)
         factory = fixture_pipeline_factory(cases, bank_path=args.bank, nlu=nlu)
     except Exception as exc:

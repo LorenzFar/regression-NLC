@@ -34,7 +34,7 @@ These are proposed adapter-facing types, not verified teammate compatibility.
 from dataclasses import asdict
 import json
 
-from buyer_agent import ContractError, PolicyDecision, RetrievalGenerator, Turn
+from retrieval_pipeline import ContractError, PolicyDecision, RetrievalGenerator, Turn
 
 
 def main():

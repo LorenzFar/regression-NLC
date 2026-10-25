@@ -6,7 +6,7 @@ Without --checkpoint NLU is explicitly scripted; with it only NLU becomes real.
 import argparse
 from pathlib import Path
 
-from buyer_agent.replay import main as replay_main
+from retrieval_pipeline.replay import main as replay_main
 
 
 def main(argv=None):

@@ -8,8 +8,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from buyer_agent import PolicyDecision, RetrievalGenerator
-from buyer_agent.bank import approve_candidate, build_bank, prepare_candidate
+from retrieval_pipeline import PolicyDecision, RetrievalGenerator
+from retrieval_pipeline.bank import approve_candidate, build_bank, prepare_candidate
 
 BANK = Path(__file__).with_name("approved_fixture_bank.jsonl")
 TRAIN_IDS = {"fixture-camera", "fixture-bicycle"}

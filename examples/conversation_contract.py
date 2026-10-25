@@ -1,7 +1,7 @@
 """Run: python -m examples.conversation_contract (from the repository root)."""
-from buyer_agent.contracts import PolicyDecision, Turn
-from buyer_agent.fixtures import FixtureCase, ScriptedComponents
-from buyer_agent.pipeline import Pipeline, Session
+from retrieval_pipeline.contracts import PolicyDecision, Turn
+from retrieval_pipeline.fixtures import FixtureCase, ScriptedComponents
+from retrieval_pipeline.pipeline import Pipeline, Session
 
 
 def main():

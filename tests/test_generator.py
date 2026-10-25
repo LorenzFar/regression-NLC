@@ -1,7 +1,7 @@
 """Behavior at the approved generation request → reply/error seam."""
 import pytest
 
-from buyer_agent import ContractError, PolicyDecision, RetrievalGenerator, Turn
+from retrieval_pipeline import ContractError, PolicyDecision, RetrievalGenerator, Turn
 
 
 @pytest.mark.parametrize("speaker", ["system", ""])

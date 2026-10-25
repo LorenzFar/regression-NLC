@@ -1,8 +1,8 @@
 """Actual TF-IDF retrieval through the generation seam, no mocked ranker."""
 import pytest
 
-from buyer_agent import ContractError, PolicyDecision, RetrievalGenerator, Turn
-from buyer_agent.bank import prepare_candidate, approve_candidate, build_bank, load_bank
+from retrieval_pipeline import ContractError, PolicyDecision, RetrievalGenerator, Turn
+from retrieval_pipeline.bank import prepare_candidate, approve_candidate, build_bank, load_bank
 
 
 def reviewed(template_id, message, response, history=None, action="counter"):

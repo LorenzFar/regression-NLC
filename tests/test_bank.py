@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from buyer_agent import ContractError
-from buyer_agent.bank import prepare_candidate, approve_candidate, build_bank, load_bank
+from retrieval_pipeline import ContractError
+from retrieval_pipeline.bank import prepare_candidate, approve_candidate, build_bank, load_bank
 
 
 def source(**changes):

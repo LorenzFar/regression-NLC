@@ -3,10 +3,10 @@ from copy import deepcopy
 import json
 import pytest
 
-from buyer_agent.contracts import PolicyDecision
-from buyer_agent.fixtures import FixtureCase, ScriptedComponents
-from buyer_agent.pipeline import Pipeline
-from buyer_agent.replay import replay_cases
+from retrieval_pipeline.contracts import PolicyDecision
+from retrieval_pipeline.fixtures import FixtureCase, ScriptedComponents
+from retrieval_pipeline.pipeline import Pipeline
+from retrieval_pipeline.replay import replay_cases
 
 
 def case(case_id="one", message="Maybe."):
@@ -43,7 +43,7 @@ def test_variants_receive_same_recorded_snapshot_and_leave_input_untouched():
 
 
 def test_independent_cases_use_their_own_recorded_context_and_stable_ids():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
     first, second = case(), case("two", "Yes.")
     second["snapshot"]["history"].append({"speaker": "seller", "text": "Recorded reply, not generated."})
     second["snapshot"]["state"] = {"agreement": "recorded-second"}
@@ -99,7 +99,7 @@ def test_nonserializable_and_nonfinite_component_outputs_are_explicit_failures()
 
 
 def test_reference_gate_and_trace_provenance_are_visible_without_hidden_gold_claims():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
     row = case()
     row["origin"] = "recorded_corpus"
     row["reconstruction_mode"] = "owner_supplied_predicted_snapshot"
@@ -117,7 +117,7 @@ def test_reference_gate_and_trace_provenance_are_visible_without_hidden_gold_cla
 
 
 def test_jsonl_cli_writes_success_and_line_errors_with_nonzero_exit(tmp_path):
-    from buyer_agent.replay import main
+    from retrieval_pipeline.replay import main
     source, output = tmp_path / "cases.jsonl", tmp_path / "trace.jsonl"
     source.write_text(json.dumps(case()) + "\nnot-json\n", encoding="utf-8")
     assert main([str(source), "--output", str(output)]) == 1
@@ -131,7 +131,7 @@ def test_jsonl_cli_writes_success_and_line_errors_with_nonzero_exit(tmp_path):
 
 
 def test_jsonl_cli_invalid_utf8_is_an_input_setup_failure(tmp_path, capsys):
-    from buyer_agent.replay import main
+    from retrieval_pipeline.replay import main
 
     source, output = tmp_path / "cases.jsonl", tmp_path / "trace.jsonl"
     source.write_bytes(b"\xff\n")
@@ -143,7 +143,7 @@ def test_jsonl_cli_invalid_utf8_is_an_input_setup_failure(tmp_path, capsys):
 
 
 def test_invalid_fixture_and_duplicate_identity_do_not_hide_valid_cases(tmp_path):
-    from buyer_agent.replay import main
+    from retrieval_pipeline.replay import main
     broken = case("broken")
     broken["fixture"]["decision"] = {"action": "counter"}
     source, output = tmp_path / "cases.jsonl", tmp_path / "trace.jsonl"
@@ -157,7 +157,7 @@ def test_invalid_fixture_and_duplicate_identity_do_not_hide_valid_cases(tmp_path
 
 
 def test_injected_nlu_allows_independent_cases_with_same_text_and_different_fixture_probabilities():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     rows = [case("first"), case("second")]
     rows[1]["fixture"]["probabilities"] = {"reject": 0.2}
@@ -188,7 +188,7 @@ def test_injected_nlu_allows_independent_cases_with_same_text_and_different_fixt
 
 @pytest.mark.parametrize("bad_first", [True, False])
 def test_malformed_message_does_not_poison_unrelated_fixture_rows(bad_first):
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     broken, valid = case("broken", ["not", "text"]), case()
     rows = [broken, valid] if bad_first else [valid, broken]
@@ -211,7 +211,7 @@ def test_malformed_message_does_not_poison_unrelated_fixture_rows(bad_first):
     {"accept": float("inf")},
 ])
 def test_malformed_probabilities_do_not_poison_shared_fixture_message(bad_first, probabilities):
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     broken, valid = case("broken"), case()
     broken["fixture"]["probabilities"] = probabilities
@@ -227,7 +227,7 @@ def test_malformed_probabilities_do_not_poison_shared_fixture_message(bad_first,
 
 @pytest.mark.parametrize("probabilities", [[], {}, {"accept": True}, {"accept": "unused"}])
 def test_injected_nlu_does_not_validate_unused_fixture_probabilities(probabilities):
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     class ConstantNLU:
         def predict(self, history, message):
@@ -242,7 +242,7 @@ def test_injected_nlu_does_not_validate_unused_fixture_probabilities(probabiliti
 
 
 def test_fixture_factory_reuses_pipelines_only_for_matching_mode_and_threshold():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     build = fixture_pipeline_factory([case()])
     off = build("off", 0.7)
@@ -256,7 +256,7 @@ def test_fixture_factory_reuses_pipelines_only_for_matching_mode_and_threshold()
 
 
 def test_reused_fixture_pipeline_gets_fresh_sessions_on_every_replay(monkeypatch):
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     rows = [case(), case("two", "Yes.")]
     rows[1]["turn_id"] = rows[0]["turn_id"]
@@ -286,7 +286,7 @@ def test_reused_fixture_pipeline_gets_fresh_sessions_on_every_replay(monkeypatch
 
 
 def test_generic_factory_is_still_called_for_each_case_and_mode():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     rows = [case(), case("two", "Yes.")]
     calls = []
@@ -303,7 +303,7 @@ def test_generic_factory_is_still_called_for_each_case_and_mode():
 
 
 def test_fixture_only_replay_still_rejects_ambiguous_duplicate_messages():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
 
     rows = [case("first"), case("second")]
     rows[1]["fixture"]["probabilities"] = {"reject": 0.2}
@@ -314,7 +314,7 @@ def test_fixture_only_replay_still_rejects_ambiguous_duplicate_messages():
 
 
 def test_fixture_factory_can_replace_only_nlu_at_the_public_replay_seam():
-    from buyer_agent.replay import fixture_pipeline_factory
+    from retrieval_pipeline.replay import fixture_pipeline_factory
     calls = []
     class RealShapeNLU:
         provenance = "adapter:test-recording-nlu"

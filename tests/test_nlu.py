@@ -4,7 +4,7 @@ torch = pytest.importorskip("torch")
 pytest.importorskip("transformers")
 from transformers import DistilBertConfig, DistilBertForSequenceClassification, DistilBertTokenizerFast
 
-from buyer_agent.nlu import NLUAdapter, NLULoadError
+from retrieval_pipeline.nlu_adapter import NLUAdapter, NLULoadError
 
 ACTS = ["propose", "counter", "accept", "reject", "inquire", "vague"]
 

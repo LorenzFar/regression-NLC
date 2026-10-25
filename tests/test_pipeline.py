@@ -1,14 +1,14 @@
 """Public pipeline behavior; all collaborators except rendering are authored fixtures."""
 import pytest
 
-from buyer_agent.contracts import PolicyDecision, Turn
-from buyer_agent.fixtures import FixtureCase, ScriptedComponents
-from buyer_agent.pipeline import Pipeline, Session
+from retrieval_pipeline.contracts import PolicyDecision, Turn
+from retrieval_pipeline.fixtures import FixtureCase, ScriptedComponents
+from retrieval_pipeline.pipeline import Pipeline, Session
 
 
 @pytest.mark.parametrize("reason", [None, "low_confidence", "unresolved_reference"])
 def test_gate_reason_must_match_policy_clarification_without_committing(reason):
-    from buyer_agent.contracts import ContractError
+    from retrieval_pipeline.contracts import ContractError
 
     cases = {"offer": FixtureCase(
         {"counter": 1.0}, PolicyDecision("counter", "100"),
@@ -51,8 +51,8 @@ def test_policy_can_choose_any_supplied_gate_reason():
 
 @pytest.mark.parametrize("origin", ["authored_fixture", "corpus"])
 def test_pipeline_reports_selected_template_provenance(tmp_path, origin):
-    from buyer_agent.bank import approve_candidate, build_bank, prepare_candidate
-    from buyer_agent.generator import RetrievalGenerator
+    from retrieval_pipeline.bank import approve_candidate, build_bank, prepare_candidate
+    from retrieval_pipeline.generator import RetrievalGenerator
 
     # Synthetic source records exercise both supported provenance labels, not real corpus data.
     rows = []
@@ -120,8 +120,8 @@ def test_scripted_counter_keeps_exact_price_and_public_history():
     assert result.trace["session_id"] == "conversation-1"
 
 def test_three_gate_modes_preserve_ablation_and_block_disputed_agreement():
-    from buyer_agent.contracts import ContractError
-    from buyer_agent.pipeline import Transition
+    from retrieval_pipeline.contracts import ContractError
+    from retrieval_pipeline.pipeline import Transition
 
     for mode in ("off", "reference_only", "full"):
         cases = {"yes": FixtureCase(
@@ -163,7 +163,7 @@ def test_three_gate_modes_preserve_ablation_and_block_disputed_agreement():
     assert session.snapshot().state == {}
 
 def test_missing_fields_fail_even_with_injected_renderer_and_leave_session_retryable():
-    from buyer_agent.contracts import ContractError, GenerationResult
+    from retrieval_pipeline.contracts import ContractError, GenerationResult
 
     class PermissiveRenderer:
         def generate(self, decision, history, message):
@@ -183,7 +183,7 @@ def test_missing_fields_fail_even_with_injected_renderer_and_leave_session_retry
         assert error.value.trace["state_after"] == error.value.trace["state_before"]
 
 def test_generation_and_commit_failures_are_atomic_and_retry_applies_once():
-    from buyer_agent.contracts import ContractError, GenerationResult
+    from retrieval_pipeline.contracts import ContractError, GenerationResult
 
     cases = {"offer": FixtureCase({"counter": 1.0}, PolicyDecision("counter", "100.25"),
                                   state_after={"offers": ["100.25"]})}
@@ -223,7 +223,7 @@ def test_generation_and_commit_failures_are_atomic_and_retry_applies_once():
     assert session.snapshot().state == {"offers": ["100.25"]}
 
 def test_nlu_receives_full_uppercase_prior_history_without_current_and_duplicate_ids_fail():
-    from buyer_agent.contracts import ContractError
+    from retrieval_pipeline.contracts import ContractError
     cases = {"same text": FixtureCase({"reject": 1.0}, PolicyDecision("reject"))}
     calls = []
     class RecordingNLU:
@@ -267,7 +267,7 @@ def test_reference_only_does_not_apply_full_gate_confidence_or_state_checks():
 
 
 def test_reconstruction_sessions_and_fixture_data_are_detached_and_terminal_is_explicit():
-    from buyer_agent.contracts import ContractError
+    from retrieval_pipeline.contracts import ContractError
     state = {"offers": ["100"], "agreement": "pending"}
     case = FixtureCase({"accept": 1.0}, PolicyDecision("confirm", "100", "buyer-1", finished=True),
                        state_after={"offers": ["100"], "agreement": "confirmed"}, finished=True)
@@ -293,8 +293,8 @@ def test_reconstruction_sessions_and_fixture_data_are_detached_and_terminal_is_e
 
 
 def test_invalid_tracker_transition_does_not_publish_or_infer_terminal_state():
-    from buyer_agent.contracts import ContractError
-    from buyer_agent.pipeline import Transition
+    from retrieval_pipeline.contracts import ContractError
+    from retrieval_pipeline.pipeline import Transition
     cases = {"case": FixtureCase({"reject": 1.0}, PolicyDecision("reject"))}
     session = Session("invalid-tracker")
     for transition in (Transition({}, "yes"), Transition([], False), None):
@@ -312,7 +312,7 @@ def test_demo_and_contract_example_use_public_pipeline_and_emit_labelled_jsonl()
     import subprocess
     import sys
 
-    run = subprocess.run([sys.executable, "-m", "buyer_agent.demo", "--jsonl"],
+    run = subprocess.run([sys.executable, "-m", "retrieval_pipeline.demo", "--jsonl"],
                          capture_output=True, text=True, check=True)
     traces = [json.loads(line) for line in run.stdout.splitlines()]
     assert [trace["policy"]["action"] for trace in traces] == ["counter", "clarify", "reject", "confirm"]
