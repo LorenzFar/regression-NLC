@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cs425-retrieval-pipeline"
+version = "0.1.0"
+description = "Price-preserving retrieval and integration for the CS425 buyer agent"
+requires-python = ">=3.11"
+dependencies = ["scikit-learn>=1.5,<2"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+nlu = ["torch>=2.14", "transformers>=5.19"]
+
+[tool.setuptools]
+py-modules = ["nlu"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["retrieval_pipeline*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
