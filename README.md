@@ -123,6 +123,21 @@ Gate modes are `off`, `reference_only`, and `full`; threshold defaults to `0.7`.
 
 Output has one JSONL record per case/mode, including failures. Traces contain component identities, probabilities, policy, state before/after, generation/provenance, timing, and errors. Exit codes: **0** all cases succeeded; **1** at least one failed; **2** invalid command/input-file setup. Malformed rows report errors without stopping valid rows. A generated candidate in a failed trace was not committed. Fixtures are not gold evaluation data.
 
+## Evaluation (RQ1 and RQ2)
+
+`evaluation/` turns gold labels and the files this repo already writes into the numbers for the report. It needs no checkpoint to run its own tests. Schema and field meanings: `evaluation/data.py`; example rows: `examples/gold_template.jsonl` (authored placeholders, not gold data).
+
+```powershell
+# RQ1: baseline predictions file + one checkpoint per variant/seed ("label@seed" pools seeds into mean +/- std)
+.\.venv\Scripts\python.exe -m evaluation.nlu_eval --gold gold.jsonl --predictions parser=parser_preds.jsonl --system k0@0=models/nlu_k0_s0.pt --system k2@0=models/nlu_k2_s0.pt --output artifacts/rq1.json
+
+# RQ2: replay the challenge cases in all gate modes, then score them
+.\.venv\Scripts\python.exe -m retrieval_pipeline.replay challenge_cases.jsonl --checkpoint models/nlu_k2_s0.pt --output artifacts/replay.jsonl
+.\.venv\Scripts\python.exe -m evaluation.gate_eval --replay artifacts/replay.jsonl --gold gold.jsonl --thresholds 0.5 0.6 0.7 0.8 0.9 --output artifacts/rq2.json
+```
+
+RQ1 reports accuracy, macro-F1 with bootstrap CI, per-class F1, confusion matrix, per-challenge-tag accuracy, calibration (ECE, NLL, Brier, risk-coverage), exact McNemar and a paired bootstrap of the macro-F1 difference against the baseline. RQ2 reports incorrect and correct confirmations, clarification count, extra turns, unnecessary clarifications, gate precision/recall/F1 and a tau sweep with the expected result of a random gate that asks equally often. The sweep re-derives the gate from recorded probabilities and flags, so it assumes the policy differs from `off` only by emitting `clarify`.
+
 ## Remaining team handoffs
 
 | Owner | Needed for full integration |

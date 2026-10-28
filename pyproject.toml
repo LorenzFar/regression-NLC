@@ -18,7 +18,7 @@ py-modules = ["nlu"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["retrieval_pipeline*"]
+include = ["retrieval_pipeline*", "evaluation*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
