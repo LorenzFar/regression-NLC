@@ -2,7 +2,7 @@
 
 Buyer-side, price-only negotiation for CS425. NLU reads the seller message. Policy authorizes a buyer action and price. The generator selects wording; the tracker owns agreement state.
 
-**Working:** checkpoint NLU, template retrieval, pipeline, and replay tests. **Still scripted:** price/reference, policy, gate, and tracker. Example templates are authored fixtures, not a response bank from the training corpus. These examples do not measure model accuracy or negotiation success.
+**Working:** checkpoint NLU, template retrieval, pipeline, replay tests, and the rule-based gate, policy, and tracker (`retrieval_pipeline/negotiation.py`, see `docs/negotiation.md`). **Still scripted:** price/reference (an interim regex adapter stands in). Example templates are authored fixtures, not a response bank from the training corpus. These examples do not measure model accuracy or negotiation success.
 
 ## Setup and run
 
@@ -45,6 +45,8 @@ The demo covers two retrieval matches, one fixed fallback, and one clarification
 | `retrieval_pipeline/fixtures.py` | Scripted collaborators for examples and tests |
 | `retrieval_pipeline/replay.py` | Independent recorded cases and JSONL export |
 | `examples/`, `tests/` | Runnable contracts, authored cases, and regression tests |
+| `retrieval_pipeline/negotiation.py` | Offer tracker, confidence gate, concession policy, `build_buyer_pipeline` |
+| `docs/negotiation.md` | Design and worked trace for the tracker, gate, and policy |
 
 ## Generator contract
 
@@ -129,7 +131,7 @@ Output has one JSONL record per case/mode, including failures. Traces contain co
 |---|---|
 | Weijie | Training splits, buyer roles, and buyer-action labels for the response bank |
 | Edric | Price extraction, validated source spans, and offer-reference resolution |
-| Ercong | Policy, gate, tracker, offer ownership, and agreement/termination rules |
+| Ercong | Done: policy, gate, tracker, offer ownership, and agreement rules (`docs/negotiation.md`). Run with `python -m examples.negotiation_contract` |
 | Barry | Gold cases and an agreed method to reconstruct pre-turn state |
 
 Real corpus templates also need human review. These handoffs remain pending. Local planning tickets stay in ignored `.scratch/`.
