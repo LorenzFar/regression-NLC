@@ -2,9 +2,9 @@
 
 Design doc for the rule-based components that replace the scripted gate, policy and tracker in `retrieval_pipeline/fixtures.py`. This doc is the source of truth for the implementation; update it when behaviour changes.
 
-- **Module:** `retrieval_pipeline/negotiation.py` (new): `OfferTracker`, `ConfidenceGate`, `RulePolicy`, `RegexPriceReference` (interim), `build_buyer_pipeline`.
+- **Module:** `retrieval_pipeline/negotiation.py` (new): `OfferTracker`, `track_turns`, `agreement_accuracy`, `ConfidenceGate`, `RulePolicy`, `RegexPriceReference` (interim), `build_buyer_pipeline`.
 - **Unchanged:** `pipeline.py`, `generator.py`, `contracts.py`, fixtures and replay.
-- **Owner:** Ercong (see README handoffs).
+- **Owners:** Ercong (state tracker), Weijie (policy and confidence gate); see README handoffs.
 
 ## 1. Where each component sits
 
@@ -52,6 +52,7 @@ Offers are stored as term-value pairs, plus the agreement status. The state is p
 - A new offer marks every live offer `superseded`, so at most one offer is live after each commit.
 - Offer ids are `f"{by}-{len(offers) + 1}"`. They are deterministic, so the state needs no counter. One helper, `next_offer_id(state, by)`, is shared by the tracker and the policy.
 - To add a term later, add a key to `terms`. No other stage changes.
+- An optional `"limits": {"target": "80", "walk_away": "100"}` key holds one item's limits. It overrides the policy's own limits, and the tracker carries it unchanged, so replay cases from different listings can share a pipeline.
 
 ### Update rules (`commit`)
 
@@ -64,17 +65,17 @@ Otherwise apply two steps in order:
 | Seller act | Effect |
 |---|---|
 | `propose` / `counter` with a price | Append a live seller offer (supersedes older ones); `agreement = "none"` |
-| `reject` | Supersede the live buyer offer |
+| `reject` | Supersede the live buyer offer. If the buyer had accepted a seller offer, the seller is withdrawing it: supersede it too and set `agreement = "none"`. In `full` mode the gate asks first, so this only commits with the gate off or in `reference_only` mode |
 | `accept`, `inquire`, `vague` | No change to offers |
 
 **2. Buyer decision**
 
 | Buyer action | Effect |
 |---|---|
-| `propose` / `counter` | Append a live buyer offer at `decision.price` |
+| `propose` / `counter` | Append a live buyer offer at `decision.price`, unless that is already the live buyer offer (it keeps its id). `agreement = "none"` |
 | `accept` | `agreement = "pending"` |
 | `confirm` | `agreement = "confirmed"`, `finished = True` |
-| `reject` | Supersede the live seller offer |
+| `reject` | Supersede the live seller offer; `agreement = "none"` |
 
 ### Main rule: `acceptance_target(state, price_reference) -> offer | None`
 
@@ -83,9 +84,18 @@ A seller acceptance confirms a deal only when **exactly one** live offer exists 
 - the buyer's live offer, or
 - the live seller offer the buyer already accepted (`agreement == "pending"`).
 
-It returns `None` when there are zero or several live offers, when the live offer isn't one the seller can accept, or when `price_reference` names a different `referenced_offer_id` or a different `price`. Prices are compared as `Decimal`, so `"95"` matches `"95.00"`.
+It returns `None` when there are zero or several live offers, when the live offer isn't one the seller can accept, or when `price_reference` names a different `referenced_offer_id` or a different `price`. Prices are compared as `Decimal`, so `"95"` matches `"95.00"`. Once `agreement == "confirmed"`, acknowledging the agreed offer stays consistent whichever side made it.
 
 The gate and the policy both call this one function, so the rule is defined in one place.
+
+Because a new offer supersedes all others, at most one offer is live after a commit. The "several live offers" branch therefore only guards states restored from outside the tracker.
+
+### Recorded dialogues (`track_turns`, `agreement_accuracy`)
+
+Replay and the tracker's evaluation start from recorded dialogues, where the buyer's turns come from a person rather than the policy.
+
+- `track_turns(turns, *, limits=None)` applies the same rules to gold-labelled turns: `{"speaker": "buyer"|"seller", "act": ..., "price": optional, "referenced_offer_id": optional}`. It returns the state before the first turn and after each turn, so `states[-1]` is the pre-turn `snapshot.state` for a replay case. A seller acceptance confirms when `acceptance_target` finds an offer. A buyer acceptance of a live seller offer makes the agreement pending.
+- `agreement_accuracy(dialogues)` is the proposal's agreement-state accuracy per turn: the share of turns with a gold `deal_agreed` where `(agreement == "confirmed") == deal_agreed`. It returns `None` when no turn is labelled.
 
 ## 3. Confidence gate (`ConfidenceGate`)
 
@@ -96,16 +106,16 @@ The gate runs before the policy and returns the reasons to ask for clarification
 | # | Reason | Condition | Modes |
 |---|---|---|---|
 | 1 | `unresolved_reference` | `reference_resolved is False`, or the top act is `propose`/`counter` and no price was resolved | `reference_only`, `full` |
-| 2 | `state_conflict` | The top act is `accept` and `acceptance_target(...)` is `None` | `full` |
+| 2 | `state_conflict` | The top act is `accept` and `acceptance_target(...)` is `None`; or `reject` with no live buyer offer, which includes a "no" to a seller offer the buyer just accepted; or `propose`/`counter`/`reject` after `agreement == "confirmed"` | `full` |
 | 3 | `low_confidence` | The NLU's top probability is below τ | `full` |
 
 `mode` (`off` / `reference_only` / `full`) mirrors `FixtureGate`, so the existing three-mode replay compares gate settings without new code. The gate uses full-precision probabilities.
 
 ## 4. Policy (`RulePolicy`)
 
-`RulePolicy(target, walk_away, fraction).decide(snapshot, observation, gate) -> PolicyDecision`
+`RulePolicy(target=None, walk_away=None, fraction="0.5").decide(snapshot, observation, gate) -> PolicyDecision`
 
-The policy is given a target and a walk-away price. It accepts, rejects, or counters. A counter concedes a fixed fraction of the gap toward the seller's price and never goes past the walk-away price. All money uses `Decimal`. Concessions round down to the cent, and prices are emitted as two-decimal strings (`"95.00"`) that pass the generator's price check.
+The policy is given a target and a walk-away price, from the constructor or from `limits` in the session state. If neither supplies them, deciding a negotiating move raises `ContractError`. It accepts, rejects, or counters. A counter concedes a fixed fraction of the gap toward the seller's price and never goes past the walk-away price. All money uses `Decimal`. Concessions round down to the cent, and prices are emitted as two-decimal strings (`"95.00"`) that pass the generator's price check.
 
 ### Concession formula
 
@@ -124,10 +134,12 @@ c = min(walk_away, b + fraction * (p - b))    otherwise
 | Gate has reasons | `clarify` with `gate.reasons[0]`. If a live offer exists, attach its id and price, so the generator uses the offer-specific template |
 | Seller `accept` | `confirm(offer.price, offer.id, finished=True)` with the offer from `acceptance_target` |
 | Seller `propose`/`counter` at `p`, and `p <= c` | `accept(p, next_offer_id(state, "seller"))`. This covers `p <= target`, and the buyer never offers more than the seller asks |
+| Seller repeats their last price `p`, and `p <= walk_away` | `accept(p, ...)`. A repeated price is the seller's final one, so waiting cannot improve it. Without this rule the buyer would approach `p` forever without reaching it |
 | Seller `propose`/`counter` at `p`, and `b == walk_away` | `reject` (no room left) |
 | Seller `propose`/`counter` at `p`, otherwise | `counter(c)` |
-| Seller `reject` / `inquire` / `vague`, with a seller price on record | The same concession step toward the latest seller price |
-| Seller `reject` / `inquire` / `vague`, with no seller price on record | `propose(b or target)` |
+| Any other turn while the buyer's acceptance is pending, except `reject` | Repeat `accept` on the same offer, so a follow-up question cannot undo the deal |
+| Seller `reject` with a seller price on record | One concession step toward that price, or `reject` if `b == walk_away` and the price is above it |
+| Seller `inquire` / `vague` (or `reject` with no seller price on record) | No concession: restate `b`, or open at `target` if the buyer has made no offer. Never above the seller's price on record |
 
 Invariants:
 
@@ -145,10 +157,10 @@ The pipeline checks that the generated action and price equal the decision, so t
 
 | Piece | What it does |
 |---|---|
-| `build_buyer_pipeline(nlu, price_reference, *, target, walk_away, fraction="0.5", threshold=0.7, mode="full", bank=None)` | The single entry point. Returns `Pipeline(nlu, price_reference, gate=ConfidenceGate(threshold, mode), policy=RulePolicy(target, walk_away, fraction), tracker=OfferTracker(), generator=RetrievalGenerator(bank))` |
+| `build_buyer_pipeline(nlu, price_reference, *, target=None, walk_away=None, fraction="0.5", threshold=0.7, mode="full", bank=None)` | The single entry point. Returns `Pipeline(nlu, price_reference, gate=ConfidenceGate(threshold, mode), policy=RulePolicy(target, walk_away, fraction), tracker=OfferTracker(), generator=RetrievalGenerator(bank))` |
 | `RegexPriceReference` | Interim adapter until Edric's resolver lands, and labelled as such. Reuses `nlu._PRICE_RE`. One bare decimal → `{"price": ..., "reference_resolved": True}`. Several prices → `{"reference_resolved": False}`. No price → `{}`. The replacement only needs the same `observe()` method |
-| Replay | `replay_cases(cases, lambda mode, t: build_buyer_pipeline(..., mode=mode, threshold=t))` works unchanged. Cases for the real components need state in the `offers`/`agreement` shape above. The existing fixture cases use the old ad-hoc shape and stay on the fixtures |
-| `examples/negotiation_contract.py` | Runs the worked trace below through `build_buyer_pipeline`. By default it uses stub NLU probabilities. With `--checkpoint PATH` it uses `NLUAdapter`. Prints buyer replies, gate reasons and the final state |
+| Replay | `replay_cases(cases, lambda mode, t: build_buyer_pipeline(nlu, price_reference, mode=mode, threshold=t))` works unchanged. Each case's `snapshot.state` comes from `track_turns(history_turns, limits={"target": ..., "walk_away": ...})[-1]`. To sweep τ, call this once per threshold: the records then come from the real gate. The `retrieval_pipeline.replay` command line still runs scripted fixtures, even with `--checkpoint`. The existing fixture cases use the old ad-hoc shape and stay on the fixtures |
+| `examples/negotiation_contract.py` | Runs the worked trace below and the variations through `build_buyer_pipeline`. By default it uses stub NLU probabilities. With `--checkpoint PATH` it uses `NLUAdapter`. Prints buyer replies, gate reasons and the final state |
 | README | Adds these components to the code map, updates the "Still scripted" line, and marks the policy/gate/tracker handoff done |
 
 ```python
@@ -181,9 +193,12 @@ Variations at t4:
 - No live buyer offer → `state_conflict` clarification.
 - "Deal at 90" (the price doesn't match buyer-4) → `state_conflict`.
 - The seller holds at 102 after the buyer has reached 100 → buyer `reject`.
+- The seller repeats 90 → buyer `accept 90.00`, because it is within walk-away.
+- The seller asks a question instead of naming a price → the buyer restates its live offer without conceding.
+- The buyer has accepted 70 and the seller asks when to pick up → buyer repeats `accept 70.00`, and the next acceptance confirms the deal.
 
 ## 8. Verification
 
-- `python -m pytest -q`: the existing suites still pass. No new tests are planned in this pass.
-- `python -m examples.negotiation_contract`: the run ends with `agreement=confirmed` and `finished=True`, no buyer price is above walk-away, and an "ok" with no live buyer offer gets a `state_conflict` clarification.
+- `python -m pytest -q`: `tests/test_negotiation.py` covers the tracker rules, the gate's reasons and modes, and the policy's constraints, including randomized seller turns checked against the invariants above.
+- `python -m examples.negotiation_contract`: the worked trace and the variations end with `agreement=confirmed` and `finished=True`, no buyer price is above walk-away, and an "ok" with no live buyer offer gets a `state_conflict` clarification.
 - `python -m examples.negotiation_contract --checkpoint models/nlu_k2_s0.pt`: inspect the traces with the real NLU.

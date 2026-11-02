@@ -45,7 +45,7 @@ The demo covers two retrieval matches, one fixed fallback, and one clarification
 | `retrieval_pipeline/fixtures.py` | Scripted collaborators for examples and tests |
 | `retrieval_pipeline/replay.py` | Independent recorded cases and JSONL export |
 | `examples/`, `tests/` | Runnable contracts, authored cases, and regression tests |
-| `retrieval_pipeline/negotiation.py` | Offer tracker, confidence gate, concession policy, `build_buyer_pipeline` |
+| `retrieval_pipeline/negotiation.py` | Offer tracker, recorded-dialogue tracking, confidence gate, concession policy, `build_buyer_pipeline` |
 | `docs/negotiation.md` | Design and worked trace for the tracker, gate, and policy |
 
 ## Generator contract
@@ -131,8 +131,8 @@ Output has one JSONL record per case/mode, including failures. Traces contain co
 |---|---|
 | Weijie | Training splits, buyer roles, and buyer-action labels for the response bank |
 | Edric | Price extraction, validated source spans, and offer-reference resolution |
-| Ercong | Done: policy, gate, tracker, offer ownership, and agreement rules (`docs/negotiation.md`). Run with `python -m examples.negotiation_contract` |
-| Barry | Gold cases and an agreed method to reconstruct pre-turn state |
+| Ercong, Weijie | Done: tracker, offer ownership, and agreement rules (Ercong); policy and gate (Weijie). See `docs/negotiation.md`. Run with `python -m examples.negotiation_contract` |
+| Barry | Gold cases, with buyer turns labelled so `track_turns` can reconstruct pre-turn state |
 
 Real corpus templates also need human review. These handoffs remain pending. Local planning tickets stay in ignored `.scratch/`.
 

@@ -19,6 +19,16 @@ CONVERSATIONS = {
         ("Yes, 95 works for me.", "accept", 0.93),
     ],
     "no-live-offer": [("Deal.", "accept", 0.95)],
+    "firm-seller": [
+        ("Firm at 90.", "counter", 0.9),
+        ("Firm at 90.", "counter", 0.9),
+        ("Deal.", "accept", 0.95),
+    ],
+    "question-after-accept": [
+        ("I can do 70.", "propose", 0.9),
+        ("When can you pick up?", "inquire", 0.9),
+        ("Sounds good.", "accept", 0.9),
+    ],
 }
 
 
