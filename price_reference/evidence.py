@@ -40,8 +40,10 @@ PRICE_QUOTE = re.compile(
     r"you(?:['’]re| are) asking|your (?:asking )?price)\b", re.I)
 FLOOR = re.compile(
     r"\b(?:(?:can(?:not|['’]t)|won['’]t|will not|don['’]t|do not|no way(?: i)? can)\s+"
-    r"(?:go|do|take|accept|sell)(?: (?:it|anything|any(?: amount)?))?\s+(?:below|under|less than)|"
-    r"not (?:taking|accepting|going|selling)(?: (?:it|anything|any(?: amount)?))?\s+(?:below|under|less than)|"
+    r"(?:go|do|take|accept|sell|let it go for)(?: (?:it|anything|any(?: amount)?))?\s+"
+    r"(?:below|under|less than|(?:any )?lower than)|"
+    r"not (?:taking|accepting|going|selling)(?: (?:it|anything|any(?: amount)?))?\s+"
+    r"(?:below|under|less than|(?:any )?lower than)|"
     r"(?:no|nothing) less than)\s*\$?\s*$", re.I)
 COMPARISON_BOUND = re.compile(
     r"\b(?:(?:any )?(?:higher|better|more|lower|less|cheaper) than|above|over|below|under|"

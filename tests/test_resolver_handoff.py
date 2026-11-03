@@ -3,13 +3,15 @@ from dataclasses import asdict
 from decimal import Decimal
 import json
 from pathlib import Path
+import sys
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
 from evaluation.resolver.data import gold_ledger
 
 from price_reference import (CachingNLU, ReferenceObserver, ReferenceSafetyGate,
-                             build_ledger, resolve)
+                             build_ledger, build_safe_buyer_pipeline, resolve)
 from price_reference.evidence import collect_mentions
 from retrieval_pipeline.contracts import PolicyDecision
 from retrieval_pipeline.fixtures import FixtureGate
@@ -141,3 +143,61 @@ def test_full_safety_gate_blocks_unhandled_validation_and_act_disagreement(flag)
     assert ReferenceSafetyGate(FixtureGate("full")).evaluate(snapshot, observation).reasons == ("unresolved_reference",)
     assert ReferenceSafetyGate(FixtureGate("off")).evaluate(snapshot, observation).reasons == ()
     assert ReferenceSafetyGate(FixtureGate("reference_only")).evaluate(snapshot, observation).reasons == ()
+
+
+@pytest.mark.parametrize("text", [
+    "I can't go lower than 450", "I can't go any lower than 450",
+    "I can't let it go for less than 450", "Not going lower than 450",
+    "I cannot go any lower than $450", "I won't go lower than 450",
+    "I'm not going any lower than 450", "I can't do less than 450",
+])
+def test_seller_floor_survives_comparison_guard_in_resolution_and_history(text):
+    answer = result(text, "counter")
+    assert answer.status == "resolved" and answer.price == "450.00"
+    ledger = build_ledger([("seller", text)])
+    assert len(ledger.offers) == 1 and ledger.offers[0].price == "450.00"
+
+
+@pytest.mark.parametrize("text", [
+    "Can you go higher than 450?", "Can you go lower than 450?",
+    "Can you go any lower than 450?", "Can't you go lower than 450?",
+    "Could you let it go for less than 450?",
+])
+def test_questions_about_other_sides_bound_do_not_create_seller_floors(text):
+    assert result(text, "counter").price is None
+    assert not build_ledger([("seller", text)]).offers
+
+
+@pytest.mark.parametrize("already_cached", [False, True])
+def test_safe_builder_installs_full_gate_and_shares_nlu(monkeypatch, already_cached):
+    module = ModuleType("retrieval_pipeline.negotiation")
+    calls = []
+
+    def builder(nlu, price_reference, **kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(nlu=nlu, price_reference=price_reference,
+                               gate=FixtureGate(kwargs["mode"]))
+
+    module.build_buyer_pipeline = builder
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    nlu = FixedNLU("accept")
+    if already_cached:
+        nlu = CachingNLU(nlu)
+    pipeline = build_safe_buyer_pipeline(nlu, listing_price="120", target="80", threshold=.8)
+    assert isinstance(pipeline.nlu, CachingNLU)
+    if already_cached:
+        assert pipeline.nlu is nlu
+    assert pipeline.price_reference.nlu is pipeline.nlu
+    assert pipeline.price_reference.listing_price == "120"
+    assert calls == [{"mode": "full", "target": "80", "threshold": .8}]
+    assert isinstance(pipeline.gate, ReferenceSafetyGate)
+    observation = Observation("conflict", "ok 70 works", {"accept": 1.0}, {
+        "reference_resolved": True, "status": "conflict", "state_conflict": True})
+    decision = pipeline.gate.evaluate(Session("safe-builder").snapshot(), observation)
+    assert "state_conflict" in decision.reasons
+
+
+@pytest.mark.parametrize("mode", ["off", "reference_only", None])
+def test_safe_builder_rejects_ablation_modes(mode):
+    with pytest.raises(ValueError, match="requires mode='full'"):
+        build_safe_buyer_pipeline(FixedNLU("accept"), mode=mode)

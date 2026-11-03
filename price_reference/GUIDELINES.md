@@ -34,7 +34,8 @@ firm" is an asking price. Strong budget wording (only/just have, budget, afford)
 remains context for either side. Seller "I can't do less than 450" states a floor,
 not a refusal of 450. Negated acceptance/pay/want cues demote their local amounts.
 Floors include "I won't accept anything less than 450" and "I'm not taking less
-than 450". Comparison bounds ("Can you go higher/better than 450?", "up from
+than 450", "I can't go any lower than 450", "Not going lower than 450", and
+"I can't let it go for less than 450". Comparison bounds ("Can you go higher/better than 450?", "up from
 450") do not propose 450 and do not create historical offers. Defined seller
 floors are protected from that filtering; a delta's amount is not a comparison
 bound merely because its following words contain "less than".
@@ -199,18 +200,20 @@ the generator's at-most-two-decimal contract. Canonical resolver output stays at
 two decimal places. Scripted fixture probabilities/reference outputs are authored
 demonstration inputs, not authoritative gold for every real component.
 
-After the teammate negotiation module is integrated, wire the shared NLU and full
-safety gate explicitly without editing its implementation:
+After the teammate negotiation module is integrated, use the safe builder without
+editing its implementation. It shares the NLU and installs the full safety gate:
 
 ```python
-from price_reference import CachingNLU, ReferenceObserver, ReferenceSafetyGate
-from retrieval_pipeline.negotiation import build_buyer_pipeline
+from price_reference import build_safe_buyer_pipeline
 
-shared = CachingNLU(actual_nlu)
-pipeline = build_buyer_pipeline(shared, ReferenceObserver(shared),
-                                target="80", walk_away="100", mode="full")
-pipeline.gate = ReferenceSafetyGate(pipeline.gate)
+pipeline = build_safe_buyer_pipeline(actual_nlu, target="80", walk_away="100")
 ```
+
+The helper requires full mode and imports the teammate negotiation module lazily;
+it is available after that module is merged, not in the current standalone branch.
+It does not change the teammate's builder or its defaults. Existing manually wired
+pipelines still need ReferenceSafetyGate around their gate. Experimental ablations
+must use the lower-level teammate builder explicitly.
 
 ReferenceSafetyGate composes the collaborator gate's decision with resolver conflict,
 act-disagreement and validation checks in full mode. In particular, a gate that
