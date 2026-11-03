@@ -130,6 +130,13 @@ class AmbiguousTurn:
 class OfferLedger:
     offers: tuple[Offer, ...] = ()
     ambiguous_turns: tuple[AmbiguousTurn, ...] = ()
+    pending_acceptance: OfferRef | None = None
+
+    def __post_init__(self):
+        if self.pending_acceptance is not None:
+            live = [offer for offer in self.offers if offer.liveness == "live"]
+            if len(live) != 1 or live[0].ref != self.pending_acceptance:
+                raise ValueError("pending acceptance must identify the single tracker-live offer")
 
     @property
     def state_history_disagreement(self):

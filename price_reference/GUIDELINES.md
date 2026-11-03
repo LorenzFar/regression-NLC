@@ -42,6 +42,12 @@ Offer questions ("would you take 50?", "how about 50?") remain proposals even if
 says inquire/vague/reject/accept; `act_disagreement` records this override. Explicit
 acceptance wording is matched against the other side's offers. `kind="reference"`
 on an extractor mention means a comparison price, not a pointer to a prior offer.
+An acceptance-like pointer ("ok that works", "ok deal") paired with a propose/counter
+act is contradictory evidence, not an implicit repeat of the speaker's own price:
+it requests clarification. Unowned "that price" is also unresolved. Explicit own
+repeats ("same as before", "my previous offer") and "your previous offer" retain
+their distinct owners. The team's standalone-unresolved-reference case therefore
+clarifies with its scripted counter act without changing the teammate fixture.
 
 One clear price resolves. Multiple surviving prices, alternatives, ranges and
 corrections remain ambiguous; rules-v1 does not guess the first or last price.
@@ -55,6 +61,10 @@ authoritative tracker state takes precedence when present. An explicit price may
 an older offer or one candidate of an ambiguous turn; unmatched prices conflict.
 Pointers with an unknown dialogue act clarify. Act-free mode only resolves a
 single explicit non-demoted amount and never infers a reference from offer presence.
+Exception supported by tracker state: if the buyer already accepted a seller's
+single live offer (agreement=pending), a seller acknowledgment confirms that offer.
+OfferLedger.pending_acceptance records this authoritative reference; it is not
+inferred just from "ok" or from the seller having once stated a price.
 
 Deltas use local direction words. "Your" targets the other side, "my" or an
 unqualified delta targets the speaker's latest clean offer. Missing, conflicting or
@@ -95,7 +105,22 @@ is flagged state_history_disagreement, not assumed stale: an unseen withdrawal c
 legitimately explain the discrepancy. This flag is advisory: it does not change
 tracker-reported liveness, suppress the state offer or override reference selection.
 It sets requires_validation so policy must check the tracker before acting.
-No other real tracker schema is assumed.
+Legacy flat-key behavior remains supported. Structured tracker support follows.
+
+The teammate branch's structured tracker schema is also supported:
+
+```json
+{"offers": [{"id": "buyer-4", "by": "buyer", "terms": {"price": "95.00"}, "status": "live"}], "agreement": "none"}
+```
+
+An explicit offers list is the complete authoritative membership, including when
+empty; it takes precedence over legacy flat keys/history reconstruction. IDs are
+echoed verbatim (their global numbering is not reconstructed), status=live stays
+live, and superseded/withdrawn/rejected records stay not_live. History only supplies
+unique owner+price links and advisory disagreement. Malformed structured state raises
+instead of silently falling back to guessed history. For this schema agreement is
+distinct from offer status: confirmed does not rewrite a recorded live status.
+A sole live seller offer with agreement=pending establishes pending_acceptance.
 
 Clarification turns (including all fixed generator clarification templates) and
 quoted-price inquiries do not create new offers. Merely matching the other side's
@@ -128,7 +153,8 @@ Before accept/confirm, policy must require resolved status, no gate reasons,
 tracker-established live validity, satisfied conditions and its own tracker check;
 it must handle requires_validation explicitly. Liveness is necessary, not sufficient.
 These fields are advisory, NOT structural enforcement; a policy that ignores them
-is not protected. Real teammate integration remains unverified.
+is not protected. Integration checks are limited to the documented revision and
+cases below; full-mode wiring must still be verified after the teammate merge.
 
 Compatibility only: the old offer_actionable field/property remains a deprecated,
 conservative eligibility hint (live reference and no outstanding validation).
@@ -161,10 +187,50 @@ Non-resolved output withholds actionable price/ID but may expose clarify_context
 
 Low NLU confidence belongs to the gate. A resolved price remains evidence even
 when that gate requests clarification. Pipeline.turn rejects a policy that ignores
-gate reasons. The authored fixture tests prove this integration contract; they do
-not verify Ercong's absent real gate/policy. Fixture reference_only mode ignores
+gate reasons. The authored fixture tests prove this integration contract; they
+do not establish blanket compatibility with every teammate revision. Fixture reference_only mode ignores
 conflicts, so it is not sufficient to enforce all resolver outcomes. A custom
 policy must inspect status/liveness/conditions, not merely price presence.
+
+## Teammate integration and the difference from scripted fixtures
+
+"109" and "109.00" are numerically identical Decimal amounts and both satisfy
+the generator's at-most-two-decimal contract. Canonical resolver output stays at
+two decimal places. Scripted fixture probabilities/reference outputs are authored
+demonstration inputs, not authoritative gold for every real component.
+
+After the teammate negotiation module is integrated, wire the shared NLU and full
+safety gate explicitly without editing its implementation:
+
+```python
+from price_reference import CachingNLU, ReferenceObserver, ReferenceSafetyGate
+from retrieval_pipeline.negotiation import build_buyer_pipeline
+
+shared = CachingNLU(actual_nlu)
+pipeline = build_buyer_pipeline(shared, ReferenceObserver(shared),
+                                target="80", walk_away="100", mode="full")
+pipeline.gate = ReferenceSafetyGate(pipeline.gate)
+```
+
+ReferenceSafetyGate composes the collaborator gate's decision with resolver conflict,
+act-disagreement and validation checks in full mode. In particular, a gate that
+recomputes acceptance from state but ignores the resolver's state_conflict flag
+must not confirm just because the resolver withheld its conflicting price/id.
+The wrapper adds state_conflict, causing the existing pipeline guard to require
+clarification. Conditions/history-only validity still need validation; the wrapper
+conservatively clarifies rather than treating a known price as authorization.
+Off/reference_only remain intentional ablation modes, not full production safety.
+It does not modify tracker state or decide that a condition is satisfied.
+
+A one-time integration check against origin/feature/policy-gate at bd97c25 used
+the actual negotiation module in memory with scripted NLU (no teammate files
+copied or changed). It verified counter 80 -> counter 95 -> low-confidence clarify
+-> confirm 95, pending seller-offer acknowledgment, and conflict -> clarification
+with the wrapper. The same conflict confirmed incorrectly without the wrapper.
+These are contract checks at that revision, not real-NLU or corpus accuracy; repeat
+against the final merged teammate implementation. Portable tests also substitute
+the real resolver into the unchanged standalone fixture and exercise the structured
+state schema. Reviewed hard gold and an unseen holdout are still required.
 
 ## Gold and review workflow
 

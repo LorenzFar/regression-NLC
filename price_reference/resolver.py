@@ -128,7 +128,12 @@ def resolve(message: str, *, speaker: str = "seller", act: str | None,
         if not clean and dropped:
             # A wrong accept act cannot turn a refusal/budget-only utterance into a deal.
             return _problem("act_price_disagree")
-        return _accept(clean, ledger, "buyer" if speaker == "seller" else "seller", message)
+        owner = "buyer" if speaker == "seller" else "seller"
+        if ledger.pending_acceptance is not None and ledger.pending_acceptance.owner == speaker:
+            # The buyer already accepted this seller offer; a seller acknowledgment
+            # confirms that agreement, rather than selecting a superseded buyer bid.
+            owner = speaker
+        return _accept(clean, ledger, owner, message)
 
     if act is None and pointer:
         return _problem("act_unknown")
@@ -154,6 +159,14 @@ def resolve(message: str, *, speaker: str = "seller", act: str | None,
 
     if pointer:
         if effective in {"propose", "counter"}:
+            own_repeat = bool(re.search(r"\bsame (?:as before|price)\b|\bmy (?:last |previous )?offer\b", message, re.I))
+            other_reference = bool(re.search(r"\byour (?:last |previous )?offer\b", message, re.I))
+            if not own_repeat and not other_reference:
+                # "That works" sounds like acceptance, not a re-proposal of the
+                # speaker's own price. Do not resolve contradictory NLU evidence
+                # by guessing an owner, even when only one own price was found.
+                return Resolution("unresolved", reason="act_reference_disagree" if ACCEPT_WORDING.search(message)
+                                  else "ambiguous_reference_owner", act_disagreement=True)
             other = "buyer" if speaker == "seller" else "seller"
             owner = other if re.search(r"\byour\b", message, re.I) else speaker
             target, blocked = latest(ledger, owner)

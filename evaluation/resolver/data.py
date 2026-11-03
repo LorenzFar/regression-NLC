@@ -62,7 +62,8 @@ def gold_ledger(row):
             text = history_turn["text"] if isinstance(history_turn, dict) else history_turn[1]
             for candidate in turn.candidates:
                 candidate.validate(text)
-    return OfferLedger(offers, ambiguous)
+    pending = offer_ref(row["pending_acceptance"]) if row.get("pending_acceptance") else None
+    return OfferLedger(offers, ambiguous, pending)
 
 
 def gold_mentions(row):
