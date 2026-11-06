@@ -18,3 +18,11 @@ __pycache__/
 .env.*
 !.env.example
 .DS_Store
+
+# Generated tagger datasets, training runs and resolver reports
+/price_tagger/data/
+/price_tagger/runs/
+/runs/
+/evaluation/resolver/report*.json
+*.safetensors
+*.ckpt

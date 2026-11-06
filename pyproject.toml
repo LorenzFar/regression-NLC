@@ -12,13 +12,14 @@ dependencies = ["scikit-learn>=1.5,<2"]
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
 nlu = ["torch>=2.14", "transformers>=5.19"]
+data = ["pyarrow>=15"]
 
 [tool.setuptools]
 py-modules = ["nlu"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["retrieval_pipeline*"]
+include = ["retrieval_pipeline*", "price_reference*", "price_tagger*", "evaluation*", "scripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
