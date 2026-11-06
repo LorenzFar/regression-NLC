@@ -66,7 +66,7 @@ RQ2 in one exchange: start one negotiation with gate **Full** and one with gate 
 | Gate | Confidence for offers = P(propose) + P(counter) | `offer_confidence`, `ConfidenceGate` |
 | Clarification | Ask about the seller's named price; conditional prices ("250 if you collect today") get their own question; the buyer remembers the asked price, and a following "yes", "ok" or restated price confirms it | `ClarificationFollowUp`, `pending_clarification`, `conditional_price` |
 | Evaluation | Generator comparison on held-out turns; full-pipeline RQ2 replay for the gold set | `scripts/evaluate_generator.py`, `retrieval_pipeline/gold_replay.py` |
-| Demo | Local chat UI: equal-height scrolling panels, step-by-step explanation of each reply, gate-off comparison, `?say=msg1|msg2` replays a scripted conversation | `demo_app/` |
+| Demo | Local chat UI: equal-height scrolling panels, step-by-step explanation of each reply, gate-off comparison, `?say=msg1\|msg2` replays a scripted conversation | `demo_app/` |
 
 Design details for the negotiation changes: `docs/negotiation.md` → Integration changes.
 
