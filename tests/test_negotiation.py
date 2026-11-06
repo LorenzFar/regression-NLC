@@ -86,7 +86,7 @@ def test_clarification_leaves_state_unchanged():
     assert moves(results) == [("clarify", "95.00")]
     # Offers are untouched; the tracker only notes what was asked about.
     pending = snapshot.state.pop("pending_clarification")
-    assert pending == {"act": "accept", "price": None}
+    assert pending == {"act": "accept", "price": "95.00"}
     assert snapshot.state == state and not snapshot.finished
 
 

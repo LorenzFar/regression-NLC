@@ -42,7 +42,7 @@ def build_agent(nlu, *, listing_price, target, walk_away, fraction="0.5", close_
         nlu=nlu,
         price_reference=ReferenceObserver(nlu, listing_price=listing),
         gate=ReferenceSafetyGate(ConfidenceGate(threshold, gate_mode)),
-        policy=RulePolicy(target, walk_away, fraction, close_gap),
+        policy=RulePolicy(target, walk_away, fraction, close_gap, whole_dollars=True),
         tracker=OfferTracker(),
         generator=generator,
         follow_up=ClarificationFollowUp(),

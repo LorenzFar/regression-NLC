@@ -18,30 +18,41 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 ### Things to try (presentation walkthrough)
 
-Use the **City road bike** preset (listed 300; buyer target 200, walk-away 260), gate **Full**, τ 0.7. Click a buyer bubble to see why it said that.
+You play the seller and type your own replies; the buttons under the chat are only examples. Click any buyer message to see, step by step, why it said that.
 
-| # | You type (seller) | What to point out |
+Use the **City road bike** preset (listed 300; buyer target 240, walk-away 280), gate **Full**, τ 0.7, concession fraction 0.5. Every reply below was produced by the real checkpoint.
+
+| You type (seller) | Buyer replies | What to point out |
 |---|---|---|
-| 0 | *(start a new negotiation)* | The buyer opens: "Hi! I saw your listing. Would you be willing to take …200?" The ledger shows seller-1 300 (listing) and buyer-2 200 |
-| 1 | `Hmm, that's quite low. I'm asking 300.` | Counter (e.g. 250). The NLU splits propose/counter, but the gate adds them together, so no needless question |
-| 2 | `Lowest I'd go is 270.` | Counter at 260. The wording comes from a real CraigslistBargain buyer: see "Original response" and the dialogue ID |
-| 3 | `How about 260?` | Accept: 260 is within walk-away and the gap to our next counter is under 5% (close_gap) |
-| 4 | `ok` | Confirm, deal banner, input locked |
+| *(start a new negotiation)* | Hi! I saw your listing. Would you be willing to take 240? | The buyer moves first, at its target. Ledger: seller-1 300 (listing), buyer-2 240 |
+| `That's too low. This bike is pretty new. How about 265?` | That seems a little pricey. Would you be willing to accept 252? | Counter halfway from 240 to 265, rounded down to whole dollars. The wording is a real CraigslistBargain buyer line |
+| `That's way too low, 265 still` | yeah i could do 265, that sounds great! | The seller repeated 265, which is within walk-away, so the policy treats it as final and accepts |
+| `250 if you can collect today` | Could you clarify whether 250 depends on that condition? | The resolver finds a price tied to a condition; the buyer only negotiates price, so the gate asks |
+| `No, I would want 250` | Great then 250 it is then. | A plain 250 is cheaper than the 265 already accepted, so it accepts |
+| `ok` | Ok thanks, We'll do 250. | Confirmed, deal banner, input locked |
 
-Clarification (new negotiation, same preset). These replies were checked with the real checkpoint:
+Clarification (start a new negotiation for each row group):
 
-| You type | What to point out |
-|---|---|
-| `Deal!` straight after the opening | Confirms the buyer's 200, because the opening put a live offer on the table (ends the negotiation; start a new one for the rows below) |
-| `I can do 250.` | The NLU reads it as an acceptance of a price that is not on the table, so the gate asks "Are you referring to the offer of 250?". The "without the gate" panel shows the plain counter it would otherwise send |
-| `yes` | The follow-up reads "yes" as confirming 250, so the buyer answers that offer ("How about 225?") |
-
-RQ2 in one exchange: start two negotiations, one with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
-
-| Gate | Buyer after `I can do 280.` | Buyer after `ok` |
+| You type | Buyer replies | What to point out |
 |---|---|---|
-| Off | "That seems a little pricey. Would you be willing to accept 200?" | "Ok, 200 it is." → deal confirmed at 200, which the seller never agreed to |
-| Full | "Are you referring to the offer of 280?" | "How about 240?" (the seller's 280 is now on record); a further `ok` confirms 240 |
+| `Deal!` | Okay I can do 240 thanks. | Confirms the opening offer, because there is exactly one live offer |
+| `I can do 270.` then `yes` | Are you referring to the offer of 270? → How about 255? | The NLU reads "I can do 270" as accepting a price that is not on the table, so it asks. "yes" confirms 270 and the buyer counters it |
+| `270 if you can collect today` then `no, 270 either way` | Could you clarify whether 270 depends on that condition? → How about 255? | Restating the price it asked about counts as an answer |
+
+RQ2 in one exchange: start one negotiation with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
+
+| Gate | After `I can do 280.` | After `ok` |
+|---|---|---|
+| Off | That seems a little pricey. Would you be willing to accept 240? | Ok, 240 it is. → deal at 240, which the seller never agreed to |
+| Full | Are you referring to the offer of 280? | How about 260? (280 is now on record); a further `ok` confirms 260 |
+
+### Settings explained
+
+- **Buyer target:** the buyer's opening offer and the price it hopes for.
+- **Walk-away:** the most it will ever pay. It never offers above this and rejects once it has reached it and the seller still wants more.
+- **Concession fraction:** each counter moves this share of the way from the buyer's last offer to the seller's latest price (0.5 = halfway). Counters are rounded down to whole dollars. The buyer accepts when the seller is at or below its next counter, when the seller repeats a price within walk-away, or, after it has countered at least once, when the gap left is at most 5% of the seller's price.
+- **Clarification gate:** decides whether to ask instead of acting. *Full* asks when the NLU's confidence is below τ, when a reference ("same as before") or a conditional price is unresolved, or when the message conflicts with the offers on the table. *Reference only* asks only about references and conditions. *Off* never asks (the RQ2 baseline).
+- **Confidence threshold τ:** the gate asks when the NLU's top probability is below τ. Propose and counter are added together, since both mean "the seller named a price".
 
 ## What the integration added
 
@@ -51,11 +62,11 @@ RQ2 in one exchange: start two negotiations, one with gate **Full** and one with
 | Response bank | 546 buyer templates from CraigslistBargain train dialogues, labelled by the He et al. rule parser, 10% of dialogues held out | `scripts/build_craigslist_bank.py`, `examples/craigslist_bank.jsonl` |
 | Generator | Accept and confirm share wording; no repeated templates within a conversation; whole prices print as `80`; opening line with greeting | `retrieval_pipeline/generator.py` |
 | Buyer opens | Buyer offers its target first; listing price recorded as the seller's asking offer | `Pipeline.open`, `RulePolicy.opening`, `OfferTracker.open` |
-| Policy | Accept a seller price within walk-away when the gap to the next counter is ≤ 5% (`close_gap`) | `RulePolicy` |
+| Policy | After at least one counter, accept a seller price within walk-away when the gap to the next counter is ≤ 5% (`close_gap`); demo counters in whole dollars (`whole_dollars`) | `RulePolicy` |
 | Gate | Confidence for offers = P(propose) + P(counter) | `offer_confidence`, `ConfidenceGate` |
-| Clarification | Ask about the seller's named price; remember it; a following "yes" confirms it | `ClarificationFollowUp`, `pending_clarification` |
+| Clarification | Ask about the seller's named price; conditional prices ("250 if you collect today") get their own question; the buyer remembers the asked price, and a following "yes", "ok" or restated price confirms it | `ClarificationFollowUp`, `pending_clarification`, `conditional_price` |
 | Evaluation | Generator comparison on held-out turns; full-pipeline RQ2 replay for the gold set | `scripts/evaluate_generator.py`, `retrieval_pipeline/gold_replay.py` |
-| Demo | Local chat UI with per-turn explanation and gate-off comparison | `demo_app/` |
+| Demo | Local chat UI: equal-height scrolling panels, step-by-step explanation of each reply, gate-off comparison, `?say=msg1|msg2` replays a scripted conversation | `demo_app/` |
 
 Design details for the negotiation changes: `docs/negotiation.md` → Integration changes.
 

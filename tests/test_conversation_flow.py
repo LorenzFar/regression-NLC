@@ -84,6 +84,14 @@ def test_ok_after_a_clarification_confirms_the_asked_price_not_our_old_offer():
     assert [o["terms"]["price"] for o in live.snapshot().state["offers"] if o["by"] == "seller"][-1] == "280.00"
 
 
+def test_conditional_price_gets_a_question_about_that_price():
+    pipeline, live = agent({"250 if you can collect today": {"accept": 0.63, "counter": 0.35}}), session()
+    pipeline.open(live, context="City road bike")
+    result = pipeline.turn(live, "250 if you can collect today", case_id="c")
+    assert "conditional_price" in result.trace["gate"]["reasons"]
+    assert result.generation.text == "Could you clarify whether 250 depends on that condition?"
+
+
 def test_a_new_price_after_a_clarification_is_read_normally():
     scores = {"I can do 250.": {"vague": 0.6, "counter": 0.4}, "no, 240": {"counter": 0.95}}
     pipeline, live = agent(scores), session()

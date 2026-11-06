@@ -149,7 +149,7 @@ class OfferTracker:
             # Offers stay untouched; only remember what we asked about, so a
             # "yes" on the next turn can confirm that reading.
             act, _ = top_act(observation)
-            state[PENDING] = {"act": act, "price": observation.price_reference.get("price")}
+            state[PENDING] = {"act": act, "price": decision.price}
             return Transition(state, False)
         state.pop(PENDING, None)
         state.setdefault("offers", [])
@@ -180,11 +180,12 @@ class ClarificationFollowUp:
             return observation
         act, _ = top_act(observation)
         affirmed = AFFIRMATION.match(observation.message) or act == "accept"
-        # A price the seller actually wrote is a new answer; a price the resolver
-        # borrowed from an earlier offer ("ok" -> our 200) is not.
+        # A price the seller actually wrote is an answer of its own; a price the
+        # resolver borrowed from an earlier offer ("ok" -> our 200) is not.
         reference = observation.price_reference
-        new_price = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
-        if new_price or not affirmed:
+        written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+        restated = written and Decimal(reference["price"]) == Decimal(pending["price"])
+        if (written and not restated) or not (affirmed or restated):
             return observation
         # We asked "do you mean <price>?", so a yes means the seller named that price:
         # an acceptance if it is our live offer, otherwise a seller offer.
@@ -269,12 +270,23 @@ class ConfidenceGate:
             or (act in {"propose", "counter"} and reference.get("price") is None)
         ):
             reasons.append("unresolved_reference")
+        # "250 if you collect today": the buyer negotiates price only, so it asks.
+        if self.mode != "off" and _conditional_price(reference) is not None:
+            reasons.append("conditional_price")
         if self.mode == "full":
             if _state_conflict(snapshot.state, act, reference):
                 reasons.append("state_conflict")
             if probability < self.threshold:
                 reasons.append("low_confidence")
         return GateDecision(self.mode, tuple(reasons), self.threshold)
+
+
+def _conditional_price(reference) -> str | None:
+    """The price the seller tied to a condition, if the resolver found one."""
+    for candidate in reference.get("candidates") or []:
+        if candidate.get("role") == "conditional":
+            return candidate.get("price")
+    return None
 
 
 def _limits(target, walk_away) -> tuple[Decimal, Decimal]:
@@ -289,13 +301,13 @@ def _limits(target, walk_away) -> tuple[Decimal, Decimal]:
 class RulePolicy:
     """Open at target; concede a fixed fraction toward the seller, never past walk-away.
 
-    Accepts a seller price within walk-away once the remaining gap to our next
-    counter is at most close_gap of the seller's price: another round would
-    risk the deal for a small saving.
+    Accepts a seller price within walk-away once the buyer has countered at
+    least once and the remaining gap to our next counter is at most close_gap
+    of the seller's price: another round would risk the deal for a small saving.
     """
     provenance = "rules:concession-policy"
 
-    def __init__(self, target=None, walk_away=None, fraction="0.5", close_gap="0.05"):
+    def __init__(self, target=None, walk_away=None, fraction="0.5", close_gap="0.05", whole_dollars=False):
         self.limits = None if target is None and walk_away is None else _limits(target, walk_away)
         self.fraction = Decimal(str(fraction))
         if not 0 < self.fraction <= 1:
@@ -303,6 +315,8 @@ class RulePolicy:
         self.close_gap = Decimal(str(close_gap))
         if not 0 <= self.close_gap < 1:
             raise ContractError("close_gap must be in [0, 1)")
+        # People haggle in whole dollars; round counters down so 252.50 becomes 252.
+        self.whole_dollars = whole_dollars
 
     def opening(self, snapshot):
         """The buyer's first message: offer the target price."""
@@ -320,11 +334,18 @@ class RulePolicy:
     def _next_price(self, last_buyer, seller, target, walk_away) -> Decimal:
         if last_buyer is None:
             return target
-        return min(walk_away, _money(last_buyer + self.fraction * (seller - last_buyer)))
+        price = _money(last_buyer + self.fraction * (seller - last_buyer))
+        if self.whole_dollars:
+            price = price.quantize(Decimal("1"), rounding=ROUND_DOWN).quantize(CENT)
+        return min(walk_away, price)
 
     def decide(self, snapshot, observation, gate):
         state = snapshot.state
         if gate.reasons:
+            conditional = _conditional_price(observation.price_reference)
+            if "conditional_price" in gate.reasons and conditional is not None:
+                return PolicyDecision("clarify", str(_money(conditional)), next_offer_id(state, "seller"),
+                                      clarification_reason="conditional_price")
             seller = _seller_price(observation)
             # Ask about the price the seller just named, if any.
             if seller is not None:
@@ -345,7 +366,10 @@ class RulePolicy:
         if act in {"propose", "counter"} and seller is not None:
             price = self._next_price(last_buyer, seller, target, walk_away)
             # A repeated price is the seller's final one, so waiting cannot improve it.
-            close = seller <= walk_away and seller - price <= self.close_gap * seller
+            # Close the gap only after at least one real counter, so the buyer
+            # never accepts the seller's first reply to its opening.
+            countered = sum(offer["by"] == "buyer" for offer in state.get("offers", [])) >= 2
+            close = countered and seller <= walk_away and seller - price <= self.close_gap * seller
             if seller <= price or close or (seller == on_record and seller <= walk_away):
                 return PolicyDecision("accept", str(seller), next_offer_id(state, "seller"))
             if last_buyer == walk_away:

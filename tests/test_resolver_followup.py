@@ -13,7 +13,7 @@ from retrieval_pipeline.generator import RetrievalGenerator
 from retrieval_pipeline.pipeline import Session
 
 
-@pytest.mark.parametrize("reason", ["low_confidence", "unresolved_reference", "state_conflict"])
+@pytest.mark.parametrize("reason", ["low_confidence", "unresolved_reference", "state_conflict", "conditional_price"])
 @pytest.mark.parametrize("specific", [False, True])
 def test_every_rendered_clarification_template_is_skipped_by_ledger(reason, specific):
     decision = PolicyDecision("clarify", "90.00" if specific else None,

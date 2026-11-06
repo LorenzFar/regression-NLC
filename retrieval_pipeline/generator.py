@@ -46,11 +46,13 @@ class RetrievalGenerator:
                 "low_confidence": "Could you clarify what you mean?",
                 "unresolved_reference": "Which offer are you referring to?",
                 "state_conflict": "Could you clarify the current status of our negotiation?",
+                "conditional_price": "Could you clarify whether your price depends on a condition?",
             }
             specific = {
                 "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
+                "conditional_price": "Could you clarify whether {price} depends on that condition?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
@@ -67,7 +69,7 @@ class RetrievalGenerator:
         said = {_shape(turn.text) for turn in history if turn.speaker.lower() == "buyer"}
         compatible = [i for i, row in enumerate(self.bank)
                       if row["action"] in pool and _shape(row["template"]) not in said
-                      and not (opening and REACTION.match(row["template"]))]
+                      and not (opening and not OFFER_START.match(row["template"]))]
         greeting = "Hi! I saw your listing. " if opening else ""
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
@@ -104,10 +106,10 @@ class RetrievalGenerator:
         )
 
 
-# Openings like "Ok." or "I understand." answer a seller turn, so they cannot open.
-REACTION = re.compile(r"\W*(ok|okay|yes|yeah|great|thats?|that's|sure|well|alright|awesome|sweet|cool|oh|"
-                      r"sounds|nice|excellent|thanks?|hmm+|i understand|i see|understood|no|sorry|wow|"
-                      r"perfect|fair|good)\b", re.I)
+# An opening must be a plain offer ("Would you take 240?"); replies such as
+# "Ok." or "My kid can use it." only make sense after the seller has spoken.
+OFFER_START = re.compile(r"\W*(would|will|could|can|how about|what about|is|are|"
+                         r"i('d| would| could| can)? ?(like to )?(offer|do|pay))\b", re.I)
 
 
 def _display(price):

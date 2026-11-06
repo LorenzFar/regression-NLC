@@ -14,10 +14,10 @@ from retrieval_pipeline.pipeline import Session
 
 ACTS = ('propose', 'counter', 'accept', 'reject', 'inquire', 'vague')
 SCENARIOS = [
-    dict(id='bike', title='City road bike', category='Bicycles', description='Aluminium frame, recently serviced. You are selling; the agent is buying.', listing_price='300', target='200', walk_away='260'),
-    dict(id='phone', title='iPhone 13 · 128 GB', category='Electronics', description='Unlocked, good battery, light cosmetic wear.', listing_price='450', target='340', walk_away='420'),
-    dict(id='table', title='Oak coffee table', category='Furniture', description='Compact solid-wood table, collection this weekend.', listing_price='120', target='75', walk_away='110'),
-    dict(id='couch', title='Apartment-sized couch', category='Furniture', description='Two-seater in charcoal fabric, clean and smoke-free.', listing_price='380', target='250', walk_away='340'),
+    dict(id='bike', title='City road bike', category='Bicycles', description='Aluminium frame, recently serviced.', listing_price='300', target='240', walk_away='280'),
+    dict(id='phone', title='iPhone 13 · 128 GB', category='Electronics', description='Unlocked, good battery, light cosmetic wear.', listing_price='450', target='360', walk_away='420'),
+    dict(id='table', title='Oak coffee table', category='Furniture', description='Compact solid-wood table, collection this weekend.', listing_price='120', target='95', walk_away='110'),
+    dict(id='couch', title='Apartment-sized couch', category='Furniture', description='Two-seater in charcoal fabric, clean and smoke-free.', listing_price='380', target='300', walk_away='350'),
 ]
 
 
@@ -137,7 +137,7 @@ def make_server(app, host='127.0.0.1', port=8000):
         def do_GET(self):
             if self.path == '/api/scenarios':
                 self.send_json(200, {'scenarios': SCENARIOS, 'nlu_provenance': app.provenance})
-            elif self.path in ('/', '/index.html'):
+            elif self.path.split('?')[0] in ('/', '/index.html'):
                 content = (Path(__file__).parent / 'static' / 'index.html').read_bytes()
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html; charset=utf-8')
