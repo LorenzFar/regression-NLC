@@ -66,8 +66,11 @@ def prepare_candidate(source, train_dialogue_ids, history_window=2):
     if re.search(r"[{}]", response):
         raise ContractError("source response must not contain template slots")
     spans = row.get("price_spans")
-    if not isinstance(spans, list) or len(spans) != (1 if row["action"] in PRICE_ACTIONS else 0):
-        raise ContractError("exactly one validated price span required for priced actions; none for reject")
+    # Offers must state the policy price. Accept/confirm may also agree without
+    # repeating it ("Deal!"); wording without a number cannot change the terms.
+    allowed = {"propose": {1}, "counter": {1}, "accept": {0, 1}, "confirm": {0, 1}, "reject": {0}}
+    if not isinstance(spans, list) or len(spans) not in allowed[row["action"]]:
+        raise ContractError("propose/counter need one validated price span; accept/confirm at most one; reject none")
     template = response
     for span in spans:
         if not isinstance(span, dict):
@@ -108,11 +111,16 @@ def approve_candidate(candidate, reviewer):
     return result
 
 
+# Rows labelled without a human: review_status -> required reviewer prefix.
+PROVISIONAL_REVIEWS = {"agent_reviewed_local_trial": "agent:", "parser_labelled": "parser:"}
+
+
 def _validate_review(row, allow_provisional):
     _validate_reviewer(row.get("reviewer"))
+    reviewer, status = str(row.get("reviewer", "")).lower(), str(row.get("review_status", ""))
     provisional = (row.get("human_approval") is False
-                   or str(row.get("reviewer", "")).lower().startswith("agent:")
-                   or str(row.get("review_status", "")).startswith("agent_")
+                   or reviewer.startswith(("agent:", "parser:"))
+                   or status.startswith(("agent_", "parser_"))
                    or str(row.get("split_status", "")).startswith("provisional"))
     if provisional:
         if allow_provisional is not True:
@@ -120,8 +128,8 @@ def _validate_review(row, allow_provisional):
         if not (row.get("origin") == "corpus"
                 and row.get("approved") is False
                 and row.get("human_approval") is False
-                and row.get("review_status") == "agent_reviewed_local_trial"
-                and row.get("reviewer", "").startswith("agent:")
+                and status in PROVISIONAL_REVIEWS
+                and reviewer.startswith(PROVISIONAL_REVIEWS[status])
                 and row.get("split_status") == "provisional_official_train"):
             raise ContractError("invalid provisional local-trial review metadata")
     elif row.get("approved") is not True:

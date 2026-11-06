@@ -107,7 +107,7 @@ def test_gate_asks_before_a_no_can_undo_an_accepted_offer():
     results, snapshot = talk(say("propose", "70"), say("reject"), say("accept"))
     assert moves(results) == [("accept", "70.00"), ("clarify", "70.00"), ("confirm", "70.00")]
     assert results[1].trace["gate"]["reasons"] == ("state_conflict",)
-    assert results[1].generation.text == "Could you clarify the status of the offer of 70.00?"
+    assert results[1].generation.text == "Could you clarify the status of the offer of 70?"
     assert snapshot.state["agreement"] == "confirmed" and snapshot.finished
 
 
@@ -366,7 +366,7 @@ def test_policy_never_confirms_an_acceptance_with_no_target_even_with_the_gate_o
 def test_clarification_names_the_live_offer_when_there_is_one():
     state = {"offers": [offer("buyer-4", "buyer", "95.00")], "agreement": "none"}
     results, _ = talk(say("accept", p=0.55), state=state)
-    assert results[0].generation.text == "Could you clarify what you mean about the offer of 95.00?"
+    assert results[0].generation.text == "Could you clarify what you mean about the offer of 95?"
     assert results[0].trace["policy"]["referenced_offer_id"] == "buyer-4"
 
 

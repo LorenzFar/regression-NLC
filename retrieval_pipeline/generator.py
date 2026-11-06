@@ -1,4 +1,6 @@
 """Render upstream-authorized buyer decisions without selecting negotiated terms."""
+import re
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -50,13 +52,18 @@ class RetrievalGenerator:
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
             kind = "generic" if reference is None else "specific"
-            text = generic[reason] if reference is None else specific[reason].format(price=decision.price)
+            text = generic[reason] if reference is None else specific[reason].format(price=_display(decision.price))
             return GenerationResult(
                 text=text, action=decision.action, price=decision.price,
                 template_id=f"fixed.clarify.{reason}.{kind}", source="clarification",
             )
+        # Accept and confirm both agree to one price, so they share wording.
+        pool = {"accept": {"accept", "confirm"}, "confirm": {"accept", "confirm"}}.get(
+            decision.action, {decision.action})
+        # Do not repeat wording the buyer already used in this conversation.
+        said = {_shape(turn.text) for turn in history if turn.speaker.lower() == "buyer"}
         compatible = [i for i, row in enumerate(self.bank)
-                      if row["action"] == decision.action]
+                      if row["action"] in pool and _shape(row["template"]) not in said]
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
             reason = "zero_similarity"
@@ -69,7 +76,7 @@ class RetrievalGenerator:
                 index, score = ranked[0]
                 if score > 0:
                     row = self.bank[index]
-                    text = row["template"].format(price=decision.price)
+                    text = row["template"].format(price=_display(decision.price))
                     return GenerationResult(text=text, action=decision.action, price=decision.price,
                                             template_id=row["template_id"], source="retrieval",
                                             similarity=float(score), origin=row["origin"],
@@ -83,10 +90,20 @@ class RetrievalGenerator:
             "reject": "I cannot accept that offer.",
         }
         return GenerationResult(
-            text=templates[decision.action].format(price=decision.price),
+            text=templates[decision.action].format(price=_display(decision.price)),
             action=decision.action,
             price=decision.price,
             template_id=f"fixed.{decision.action}",
             source="fallback",
             fallback_reason=reason,
         )
+
+
+def _display(price):
+    """Write whole amounts as people do ("80", not "80.00"); the value is unchanged."""
+    return price[:-3] if price is not None and price.endswith(".00") else price
+
+
+def _shape(text):
+    """Wording with numbers and slots blanked, for spotting repeated templates."""
+    return re.sub(r"\{price\}|\d+(?:\.\d+)?", "#", text).strip().lower()

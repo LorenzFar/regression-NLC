@@ -77,7 +77,7 @@ def test_stable_ties_fallbacks_and_clarification_are_observable(tmp_path):
     absent = gen.generate(PolicyDecision("confirm", "80.00", "buyer-1"), [], "camera")
     zero = gen.generate(PolicyDecision("counter", "80.00"), [], "unrelatedtoken")
     assert (absent.source, absent.action, absent.fallback_reason) == ("fallback", "confirm", "no_compatible_candidate")
-    assert absent.text == "Thank you for accepting my offer of 80.00."
+    assert absent.text == "Thank you for accepting my offer of 80."
     assert (zero.source, zero.action, zero.fallback_reason) == ("fallback", "counter", "zero_similarity")
     clarified = gen.generate(PolicyDecision("clarify", clarification_reason="low_confidence"), [], "camera")
     assert clarified.source == "clarification"
