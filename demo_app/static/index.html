@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Buyer Lab · Negotiation demo</title>
+    <style>
+      :root {
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        color: #172e40;
+        background: #f3f6f8;
+        font-size: 17px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        background: white;
+        border-bottom: 1px solid #d9e2e8;
+        padding: 20px 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+      }
+      h1 {
+        font-size: 26px;
+        margin: 0;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 0 0 16px;
+      }
+      h3 {
+        font-size: 15px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #587083;
+        margin: 22px 0 10px;
+      }
+      p {
+        line-height: 1.5;
+      }
+      small,
+      .muted {
+        color: #647889;
+        font-size: 14px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 280px minmax(380px, 1fr) 410px;
+        gap: 20px;
+        padding: 22px;
+        max-width: 1800px;
+        margin: auto;
+      }
+      aside,
+      .chat {
+        background: white;
+        border: 1px solid #dce5eb;
+        border-radius: 16px;
+        padding: 22px;
+        min-width: 0;
+      }
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 650;
+        margin: 16px 0 7px;
+      }
+      input,
+      select,
+      button {
+        font: inherit;
+      }
+      select,
+      input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #b8c9d4;
+        border-radius: 8px;
+        background: white;
+        color: inherit;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #176963;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid #cad8e1;
+        border-radius: 9px;
+        padding: 10px 13px;
+        background: white;
+        color: #234258;
+      }
+      button:hover {
+        background: #edf5f4;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .primary {
+        background: #146b62;
+        color: white;
+        border-color: #146b62;
+      }
+      .primary:hover {
+        background: #0b514a;
+      }
+      .wide {
+        width: 100%;
+        margin-top: 20px;
+      }
+      .price {
+        font-size: 34px;
+        font-weight: 750;
+        margin: 14px 0;
+      }
+      .tag,
+      .badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 750;
+        border-radius: 6px;
+        padding: 5px 8px;
+        background: #e9eff5;
+        color: #425b73;
+      }
+      .tag {
+        font-weight: 500;
+      }
+      .badge.counter,
+      .badge.propose {
+        background: #e0ecfc;
+        color: #20549a;
+      }
+      .badge.accept,
+      .badge.confirm {
+        background: #d8f3e8;
+        color: #176546;
+      }
+      .badge.clarify {
+        background: #fff0c9;
+        color: #855719;
+      }
+      .badge.reject {
+        background: #fce3e5;
+        color: #a03044;
+      }
+      .chat {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 132px);
+        min-height: 640px;
+      }
+      .chat-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        border-bottom: 1px solid #e5ebef;
+        padding-bottom: 16px;
+      }
+      #messages {
+        flex: 1;
+        overflow: auto;
+        padding: 20px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .bubble {
+        max-width: 88%;
+        padding: 15px 17px;
+        border-radius: 13px;
+        background: #eef4f8;
+        align-self: flex-start;
+        cursor: pointer;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        outline-offset: 3px;
+      }
+      .bubble.selected {
+        outline: 2px solid #3c8e88;
+      }
+      .bubble.seller {
+        background: #176963;
+        color: white;
+        align-self: flex-end;
+        cursor: default;
+      }
+      .bubble .meta {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .bubble .speaker {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        opacity: 0.7;
+      }
+      .empty {
+        margin: auto;
+        text-align: center;
+        color: #6b8090;
+        max-width: 340px;
+      }
+      .empty strong {
+        display: block;
+        font-size: 23px;
+        color: #294657;
+        margin-bottom: 12px;
+      }
+      .examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+      }
+      .examples button {
+        font-size: 13px;
+        padding: 7px 9px;
+      }
+      form {
+        display: flex;
+        gap: 8px;
+      }
+      #message {
+        min-width: 0;
+        flex: 1;
+        border: 1px solid #b8c9d4;
+        border-radius: 9px;
+        padding: 13px;
+        font: inherit;
+      }
+      #error {
+        color: #a03044;
+        min-height: 22px;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      #finished {
+        background: #daf4e8;
+        color: #165d41;
+        padding: 14px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-weight: 700;
+      }
+      #inspect {
+        height: calc(100vh - 132px);
+        min-height: 640px;
+        overflow: auto;
+      }
+      .barrow {
+        display: grid;
+        grid-template-columns: 70px 1fr 46px;
+        gap: 8px;
+        align-items: center;
+        font-size: 14px;
+        margin: 9px 0;
+      }
+      .track {
+        height: 12px;
+        border-radius: 3px;
+        background: #e9eff3;
+        position: relative;
+      }
+      .fill {
+        height: 100%;
+        background: #3d879d;
+        border-radius: 3px;
+      }
+      .marker {
+        position: absolute;
+        height: 18px;
+        top: -3px;
+        width: 2px;
+        background: #b96b22;
+      }
+      .detail {
+        background: #f3f6f8;
+        border-radius: 8px;
+        padding: 12px;
+        line-height: 1.55;
+        font-size: 14px;
+        overflow-wrap: anywhere;
+      }
+      .warning {
+        background: #fff2d3;
+        border-left: 4px solid #d29432;
+      }
+      .positive {
+        background: #e6f4ef;
+      }
+      blockquote {
+        margin: 7px 0;
+        white-space: pre-wrap;
+      }
+      table {
+        width: 100%;
+        font-size: 13px;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 7px 3px;
+        border-bottom: 1px solid #dde6ec;
+      }
+      td:last-child {
+        font-size: 11px;
+      }
+      .note {
+        font-size: 12px;
+        color: #738694;
+        line-height: 1.5;
+      }
+      #provenance {
+        font-size: 13px;
+        max-width: 560px;
+        overflow-wrap: anywhere;
+        color: #516978;
+      }
+      .status-dot {
+        color: #19816e;
+      }
+      #busy {
+        font-size: 13px;
+        color: #587083;
+      }
+      .limits {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 1150px) {
+        main {
+          grid-template-columns: 240px minmax(350px, 1fr);
+        }
+        #inspect {
+          grid-column: 1/-1;
+          height: auto;
+          min-height: 0;
+        }
+        .chat {
+          height: 750px;
+        }
+      }
+      @media (max-width: 680px) {
+        main {
+          display: block;
+          padding: 10px;
+        }
+        aside,
+        .chat {
+          margin-bottom: 12px;
+        }
+        .chat {
+          height: 740px;
+        }
+        header {
+          padding: 15px;
+          display: block;
+        }
+        #provenance {
+          margin-top: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1><span class="status-dot">●</span> Buyer Lab</h1>
+        <small>CS425 · Price negotiation, made inspectable</small>
+      </div>
+      <div id="provenance">Loading NLU provenance…</div>
+    </header>
+    <main>
+      <aside>
+        <h2>The listing</h2>
+        <label for="preset">Choose a scenario</label
+        ><select id="preset"></select>
+        <p><span class="tag" id="category"></span></p>
+        <h2 id="title"></h2>
+        <div class="price" id="listing"></div>
+        <p id="description" class="muted"></p>
+        <div class="limits">
+          <div>
+            <label for="target">Buyer target</label><input id="target" type="number" min="0" step=".01" />
+          </div>
+          <div><label for="walk">Walk-away</label><input id="walk" type="number" min="0" step=".01" /></div>
+        </div>
+        <label for="gate">Confidence gate</label
+        ><select id="gate">
+          <option value="full">Full · confidence + reference</option>
+          <option value="reference_only">Reference safety only</option>
+          <option value="off">Off · no gate</option></select
+        ><label for="threshold">Confidence threshold τ = <output id="tau">0.70</output></label
+        ><input id="threshold" type="range" min="0" max="1" step=".01" value=".7" /><label for="fraction"
+          >Concession fraction</label
+        ><input id="fraction" type="number" min=".01" max="1" step=".05" value=".5" /><button
+          class="primary wide"
+          id="new"
+        >
+          New negotiation
+        </button>
+        <p class="note">
+          You play the <b>seller</b>. The bot is the <b>buyer</b>. Settings apply when you start a new
+          negotiation. Prices are policy-authorized, not generated by a language model.
+        </p>
+      </aside>
+      <section class="chat">
+        <div class="chat-heading">
+          <h2>Negotiate with the buyer</h2>
+          <span id="busy">Ready</span>
+        </div>
+        <div id="messages">
+          <div class="empty">
+            <strong>Your listing. Their offer.</strong>Send a seller message to begin. Select any buyer reply
+            to inspect its decision.
+          </div>
+        </div>
+        <div id="finished" hidden>Deal confirmed · negotiation complete</div>
+        <div class="examples" id="examples"></div>
+        <form id="form">
+          <input
+            id="message"
+            placeholder="Type as the seller…"
+            aria-label="Seller message"
+            maxlength="4000"
+            autocomplete="off"
+          /><button class="primary" id="send">Send ↗</button>
+        </form>
+        <div role="alert" id="error"></div>
+      </section>
+      <aside id="inspect">
+        <h2>Why did the buyer say this?</h2>
+        <p class="muted" id="inspect-empty">
+          A live trace of the selected turn appears here. No hidden reasoning or LLM calls.
+        </p>
+        <div id="details" hidden>
+          <h3>1 · Seller-act probabilities</h3>
+          <div id="bars"></div>
+          <small id="threshold-note"></small>
+          <h3>2 · Price & reference</h3>
+          <div id="reference" class="detail"></div>
+          <h3>3 · Gate decision</h3>
+          <div id="gate-detail" class="detail"></div>
+          <h3>4 · Buyer policy</h3>
+          <div id="policy" class="detail"></div>
+          <h3>5 · Wording & provenance</h3>
+          <div id="generator" class="detail"></div>
+          <h3>Offers ledger <span id="agreement" class="badge"></span></h3>
+          <table>
+            <thead>
+              <tr>
+                <th>ID / owner</th>
+                <th>Price</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledger"></tbody>
+          </table>
+          <h3>Without the gate</h3>
+          <div id="counterfactual" class="detail"></div>
+          <p class="note">
+            Counterfactual replay uses the same pre-turn history, NLU, bank and limits. It never changes this
+            negotiation. This is a mechanism demo, not a quality evaluation.
+          </p>
+        </div>
+      </aside>
+    </main>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      let scenarios = [],
+        session = null,
+        busy = false,
+        finished = false;
+      const money = (x) => (x == null ? "—" : Number(x).toFixed(2));
+      function node(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      }
+      async function api(path, data) {
+        const response = await fetch(
+          "/api/" + path,
+          data === undefined
+            ? {}
+            : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) },
+        );
+        const body = await response.json();
+        if (!response.ok) throw Error(body.error || "Request failed");
+        return body;
+      }
+      function controls() {
+        ["new", "preset", "target", "walk", "gate", "threshold", "fraction"].forEach(
+          (id) => ($(id).disabled = busy),
+        );
+        $("send").disabled = busy || finished || !session;
+        $("message").disabled = busy || finished || !session;
+        document
+          .querySelectorAll("#examples button")
+          .forEach((b) => (b.disabled = busy || finished || !session));
+        $("busy").textContent = busy ? "Buyer is thinking…" : finished ? "Finished" : "Ready";
+      }
+      function error(e) {
+        $("error").textContent = e.message;
+      }
+      function preset() {
+        const s = scenarios[$("preset").value];
+        $("title").textContent = s.title;
+        $("category").textContent = s.category;
+        $("listing").textContent = "$" + money(s.listing_price);
+        $("description").textContent = s.description;
+        $("target").value = s.target;
+        $("walk").value = s.walk_away;
+        $("examples").replaceChildren();
+        [
+          "I'm asking " + s.listing_price + " for it",
+          "Lowest I can go is " + Math.round(Number(s.listing_price) * 0.9),
+          "ok",
+          "same as before",
+          "Deal!",
+        ].forEach((text) => {
+          const b = node("button", text);
+          b.type = "button";
+          b.onclick = () => {
+            $("message").value = text;
+            send();
+          };
+          $("examples").append(b);
+        });
+        controls();
+      }
+      async function fresh() {
+        busy = true;
+        controls();
+        $("error").textContent = "";
+        try {
+          const s = scenarios[$("preset").value];
+          const created = await api("session", {
+            ...s,
+            target: $("target").value,
+            walk_away: $("walk").value,
+            gate_mode: $("gate").value,
+            threshold: Number($("threshold").value),
+            fraction: $("fraction").value,
+          });
+          const old = session;
+          session = created.session_id;
+          if (old) await api("reset", { session_id: old }).catch(() => {});
+          finished = false;
+          $("messages").replaceChildren(node("div", "You are the seller. Make your opening move.", "empty"));
+          $("details").hidden = true;
+          $("inspect-empty").hidden = false;
+          $("finished").hidden = true;
+          $("message").value = "";
+        } catch (e) {
+          error(e);
+        } finally {
+          busy = false;
+          controls();
+          $("message").focus();
+        }
+      }
+      function bubble(speaker, text, result) {
+        const b = node("div", undefined, "bubble " + speaker);
+        b.append(
+          node("span", speaker === "seller" ? "YOU · SELLER" : "AGENT · BUYER", "speaker"),
+          node("div", text),
+        );
+        if (result) {
+          const meta = node("div", undefined, "meta");
+          meta.append(
+            node(
+              "span",
+              result.action.toUpperCase() + (result.price ? " " + money(result.price) : ""),
+              "badge " + result.action,
+            ),
+          );
+          let source =
+            result.source === "retrieval"
+              ? (result.origin === "corpus" ? "Corpus retrieval" : "Authored fixture retrieval") +
+                " · " +
+                Number(result.similarity || 0).toFixed(3)
+              : result.source === "fallback"
+                ? "Fixed fallback"
+                : "Clarification template";
+          meta.append(node("span", source, "tag"));
+          b.append(meta);
+          b.tabIndex = 0;
+          b.setAttribute("role", "button");
+          b.onclick = () => inspect(result, b);
+          b.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              inspect(result, b);
+            }
+          };
+        }
+        $("messages").append(b);
+        if (result) inspect(result, b);
+        b.scrollIntoView({ block: "nearest" });
+      }
+      async function send() {
+        const text = $("message").value.trim();
+        if (!text || busy || finished || !session) return;
+        busy = true;
+        controls();
+        $("error").textContent = "";
+        try {
+          const result = await api("turn", { session_id: session, message: text });
+          $("messages").querySelector(".empty")?.remove();
+          bubble("seller", text);
+          bubble("buyer", result.reply, result);
+          $("message").value = "";
+          finished = result.finished;
+          $("finished").hidden = !finished;
+          $("finished").textContent = "Deal confirmed at $" + money(result.price) + " · negotiation complete";
+        } catch (e) {
+          error(e);
+        } finally {
+          busy = false;
+          controls();
+          if (!finished) $("message").focus();
+        }
+      }
+      function lines(id, rows) {
+        $(id).replaceChildren(
+          ...rows.map(([label, value]) => {
+            const p = node("div");
+            p.append(node("b", label + ": "), document.createTextNode(value == null ? "—" : String(value)));
+            return p;
+          }),
+        );
+      }
+      function inspect(r, b) {
+        document.querySelectorAll(".bubble.selected").forEach((x) => x.classList.remove("selected"));
+        b.classList.add("selected");
+        $("details").hidden = false;
+        $("inspect-empty").hidden = true;
+        $("bars").replaceChildren();
+        const tau = r.gate.threshold ?? 0;
+        for (const act of ["propose", "counter", "accept", "reject", "inquire", "vague"]) {
+          const p = r.probabilities[act] || 0,
+            row = node("div", undefined, "barrow"),
+            track = node("div", undefined, "track"),
+            fill = node("div", undefined, "fill"),
+            marker = node("div", undefined, "marker");
+          fill.style.width = p * 100 + "%";
+          marker.style.left = tau * 100 + "%";
+          track.append(fill, marker);
+          row.append(node("span", act), track, node("span", Math.round(p * 100) + "%"));
+          $("bars").append(row);
+        }
+        $("threshold-note").textContent = "Orange marker: τ = " + tau.toFixed(2) + " · " + r.gate.mode;
+        const ref = r.price_reference;
+        lines("reference", [
+          ["Price", money(ref.price)],
+          ["Status", ref.status],
+          ["Offer", ref.referenced_offer_id],
+          ["Reason", ref.reason],
+        ]);
+        lines("gate-detail", [
+          ["Mode", r.gate.mode],
+          [
+            "Reasons",
+            r.gate.reasons.length ? r.gate.reasons.join(", ") : "Passed — no clarification requested",
+          ],
+          ["Threshold", tau],
+        ]);
+        $("gate-detail").className = "detail " + (r.gate.reasons.length ? "warning" : "positive");
+        lines("policy", [
+          ["Action", r.policy.action],
+          ["Authorized price", money(r.policy.price)],
+          ["Offer", r.policy.referenced_offer_id],
+          ["Clarification", r.policy.clarification_reason],
+        ]);
+        lines("generator", [
+          ["Source", r.source],
+          ["Origin", r.origin],
+          ["Similarity", r.similarity],
+          ["Template ID", r.template_id],
+          ["Template", r.template],
+          ["Original response", r.original_response],
+          ["Dialogue ID", r.source_dialogue_id],
+          ["Fallback reason", r.fallback_reason],
+        ]);
+        $("agreement").textContent = r.agreement;
+        $("agreement").className = "badge " + (r.agreement === "confirmed" ? "confirm" : "");
+        $("ledger").replaceChildren(
+          ...r.offers.map((o) => {
+            const tr = node("tr");
+            tr.append(
+              node("td", o.id + " / " + o.by),
+              node("td", money(o.terms.price)),
+              node("td", o.status),
+            );
+            return tr;
+          }),
+        );
+        const c = r.counterfactual,
+          different = c.reply !== r.reply || c.action !== r.action;
+        $("counterfactual").className = "detail " + (different ? "warning" : "");
+        lines("counterfactual", [
+          ["Action", c.action],
+          ["Reply", c.reply || c.error],
+          ["Comparison", different ? "Different from the gated reply" : "Same reply for this turn"],
+        ]);
+      }
+      $("form").onsubmit = (e) => {
+        e.preventDefault();
+        send();
+      };
+      $("new").onclick = fresh;
+      $("preset").onchange = preset;
+      $("threshold").oninput = () => {
+        $("tau").textContent = Number($("threshold").value).toFixed(2);
+      };
+      (async () => {
+        try {
+          const data = await api("scenarios");
+          scenarios = data.scenarios;
+          $("provenance").textContent = "NLU · " + data.nlu_provenance;
+          scenarios.forEach((s, i) => {
+            const o = node("option", s.title);
+            o.value = i;
+            $("preset").append(o);
+          });
+          preset();
+          await fresh();
+        } catch (e) {
+          error(e);
+        }
+      })();
+    </script>
+  </body>
+</html>
