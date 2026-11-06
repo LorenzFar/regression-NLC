@@ -153,7 +153,7 @@ Invariants:
 - **Close gap.** A seller price at or below walk-away is accepted when it is within `close_gap` (default 5%) of the seller's price from our next counter. Example: seller 260, walk-away 260, next counter 247.50, gap 4.8% → accept.
 - **Offer confidence.** The gate adds P(propose) and P(counter) when the top act is one of them, because the policy treats both as "the seller named a price". "I'm asking 300" at propose 0.51 / counter 0.45 no longer asks for clarification.
 - **Clarify about the seller's price.** When the gate fires and the seller named a price, the policy asks about that price ("Could you clarify whether you mean 250?").
-- **Clarification follow-up.** On a clarify turn the tracker stores `pending_clarification = {act, price}` (offers unchanged). `ClarificationFollowUp` runs before the gate: if the seller then affirms ("yes", "correct", ...) without a new price, the turn is read as that price at full confidence, as an acceptance when it matches our live offer, otherwise as a seller offer. Any other reply is read normally and clears the pending note.
+- **Clarification follow-up.** On a clarify turn the tracker stores `pending_clarification = {act, price}` (offers unchanged). `ClarificationFollowUp` runs before the gate: if the seller then affirms ("yes", "correct", or anything the NLU reads as accept, like "ok") without writing a new price, the turn is read as that price at full confidence, as an acceptance when it matches our live offer, otherwise as a seller offer. Any other reply is read normally and clears the pending note. Without this, "ok" after "Are you referring to the offer of 280?" would confirm the buyer's older 200 offer.
 
 ## 5. Generator (`RetrievalGenerator`, already built)
 

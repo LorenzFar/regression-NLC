@@ -14,7 +14,7 @@ from retrieval_pipeline.pipeline import Session
 
 ACTS = ('propose', 'counter', 'accept', 'reject', 'inquire', 'vague')
 SCENARIOS = [
-    dict(id='bike', title='City road bike', category='Bicycles', description='Aluminium frame, recently serviced. You are selling; the agent is buying.', listing_price='300', target='220', walk_away='280'),
+    dict(id='bike', title='City road bike', category='Bicycles', description='Aluminium frame, recently serviced. You are selling; the agent is buying.', listing_price='300', target='200', walk_away='260'),
     dict(id='phone', title='iPhone 13 · 128 GB', category='Electronics', description='Unlocked, good battery, light cosmetic wear.', listing_price='450', target='340', walk_away='420'),
     dict(id='table', title='Oak coffee table', category='Furniture', description='Compact solid-wood table, collection this weekend.', listing_price='120', target='75', walk_away='110'),
     dict(id='couch', title='Apartment-sized couch', category='Furniture', description='Two-seater in charcoal fabric, clean and smoke-free.', listing_price='380', target='250', walk_away='340'),

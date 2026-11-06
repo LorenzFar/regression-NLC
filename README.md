@@ -16,6 +16,49 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 `--scripted-nlu` swaps in a keyword stand-in (labelled in the header) when torch or the checkpoint is unavailable. `--bank PATH` picks another response bank.
 
+### Things to try (presentation walkthrough)
+
+Use the **City road bike** preset (listed 300; buyer target 200, walk-away 260), gate **Full**, τ 0.7. Click a buyer bubble to see why it said that.
+
+| # | You type (seller) | What to point out |
+|---|---|---|
+| 0 | *(start a new negotiation)* | The buyer opens: "Hi! I saw your listing. Would you be willing to take …200?" The ledger shows seller-1 300 (listing) and buyer-2 200 |
+| 1 | `Hmm, that's quite low. I'm asking 300.` | Counter (e.g. 250). The NLU splits propose/counter, but the gate adds them together, so no needless question |
+| 2 | `Lowest I'd go is 270.` | Counter at 260. The wording comes from a real CraigslistBargain buyer: see "Original response" and the dialogue ID |
+| 3 | `How about 260?` | Accept: 260 is within walk-away and the gap to our next counter is under 5% (close_gap) |
+| 4 | `ok` | Confirm, deal banner, input locked |
+
+Clarification (new negotiation, same preset). These replies were checked with the real checkpoint:
+
+| You type | What to point out |
+|---|---|
+| `Deal!` straight after the opening | Confirms the buyer's 200, because the opening put a live offer on the table (ends the negotiation; start a new one for the rows below) |
+| `I can do 250.` | The NLU reads it as an acceptance of a price that is not on the table, so the gate asks "Are you referring to the offer of 250?". The "without the gate" panel shows the plain counter it would otherwise send |
+| `yes` | The follow-up reads "yes" as confirming 250, so the buyer answers that offer ("How about 225?") |
+
+RQ2 in one exchange: start two negotiations, one with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
+
+| Gate | Buyer after `I can do 280.` | Buyer after `ok` |
+|---|---|---|
+| Off | "That seems a little pricey. Would you be willing to accept 200?" | "Ok, 200 it is." → deal confirmed at 200, which the seller never agreed to |
+| Full | "Are you referring to the offer of 280?" | "How about 240?" (the seller's 280 is now on record); a further `ok` confirms 240 |
+
+## What the integration added
+
+| Area | Change | Where |
+|---|---|---|
+| Integration | All team branches merged; one factory builds NLU → price/reference → gate → policy → generator → tracker | `retrieval_pipeline/agent.py` |
+| Response bank | 546 buyer templates from CraigslistBargain train dialogues, labelled by the He et al. rule parser, 10% of dialogues held out | `scripts/build_craigslist_bank.py`, `examples/craigslist_bank.jsonl` |
+| Generator | Accept and confirm share wording; no repeated templates within a conversation; whole prices print as `80`; opening line with greeting | `retrieval_pipeline/generator.py` |
+| Buyer opens | Buyer offers its target first; listing price recorded as the seller's asking offer | `Pipeline.open`, `RulePolicy.opening`, `OfferTracker.open` |
+| Policy | Accept a seller price within walk-away when the gap to the next counter is ≤ 5% (`close_gap`) | `RulePolicy` |
+| Gate | Confidence for offers = P(propose) + P(counter) | `offer_confidence`, `ConfidenceGate` |
+| Clarification | Ask about the seller's named price; remember it; a following "yes" confirms it | `ClarificationFollowUp`, `pending_clarification` |
+| Evaluation | Generator comparison on held-out turns; full-pipeline RQ2 replay for the gold set | `scripts/evaluate_generator.py`, `retrieval_pipeline/gold_replay.py` |
+| Demo | Local chat UI with per-turn explanation and gate-off comparison | `demo_app/` |
+
+Design details for the negotiation changes: `docs/negotiation.md` → Integration changes.
+
 ## Setup and run
 
 Use Python 3.11. From the repository root in PowerShell:

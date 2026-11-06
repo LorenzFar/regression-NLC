@@ -73,6 +73,17 @@ def test_yes_after_a_clarification_confirms_the_price_we_asked_about():
     assert [o["terms"]["price"] for o in state["offers"] if o["by"] == "seller"] == ["250.00"]
 
 
+def test_ok_after_a_clarification_confirms_the_asked_price_not_our_old_offer():
+    scores = {"I can do 280.": {"counter": 0.4, "vague": 0.6}, "ok": {"accept": 0.95}}
+    pipeline, live = agent(scores), session()
+    pipeline.open(live, context="City road bike")
+    pipeline.turn(live, "I can do 280.", case_id="c1")
+    answer = pipeline.turn(live, "ok", case_id="c2")
+    # Without the follow-up, "ok" would confirm the buyer's opening 200.
+    assert answer.generation.action != "confirm"
+    assert [o["terms"]["price"] for o in live.snapshot().state["offers"] if o["by"] == "seller"][-1] == "280.00"
+
+
 def test_a_new_price_after_a_clarification_is_read_normally():
     scores = {"I can do 250.": {"vague": 0.6, "counter": 0.4}, "no, 240": {"counter": 0.95}}
     pipeline, live = agent(scores), session()

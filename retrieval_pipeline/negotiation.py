@@ -167,8 +167,10 @@ class ClarificationFollowUp:
     """A "yes" to our clarifying question confirms the reading we asked about.
 
     Runs before the gate. If the last buyer turn clarified a seller price and the
-    seller now affirms without naming a new price, the observation becomes that
-    act and price with full confidence. Anything else passes through unchanged.
+    seller now affirms ("yes", or any reply the NLU reads as accept, such as
+    "ok") without naming a new price, the observation becomes that price with
+    full confidence. Otherwise "ok" would accept our own older offer instead.
+    Anything else passes through unchanged.
     """
     provenance = "rules:clarification-follow-up"
 
@@ -176,7 +178,13 @@ class ClarificationFollowUp:
         pending = snapshot.state.get(PENDING)
         if not pending or pending.get("price") is None:
             return observation
-        if observation.price_reference.get("price") is not None or not AFFIRMATION.match(observation.message):
+        act, _ = top_act(observation)
+        affirmed = AFFIRMATION.match(observation.message) or act == "accept"
+        # A price the seller actually wrote is a new answer; a price the resolver
+        # borrowed from an earlier offer ("ok" -> our 200) is not.
+        reference = observation.price_reference
+        new_price = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+        if new_price or not affirmed:
             return observation
         # We asked "do you mean <price>?", so a yes means the seller named that price:
         # an acceptance if it is our live offer, otherwise a seller offer.
