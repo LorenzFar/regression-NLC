@@ -1,9 +1,14 @@
-"""Proposed immutable handoff contracts; amounts are exact SGD decimal strings."""
+"""Immutable pipeline contracts; prices are exact SGD decimal strings."""
+import re
 from dataclasses import dataclass
 
 
+PRICE_ACTIONS = {"propose", "counter", "accept", "confirm"}
+ACTIONS = PRICE_ACTIONS | {"reject", "clarify"}
+
+
 class ContractError(ValueError):
-    """A generation request violates the proposed public contract."""
+    """A generation request violates the public contract."""
 
 
 @dataclass(frozen=True)
@@ -33,3 +38,47 @@ class GenerationResult:
     origin: str | None = None
     source_dialogue_id: str | None = None
     source_turn_id: str | None = None
+
+
+def validate_public_context(history: list[Turn], message: str) -> None:
+    """Validate preceding public turns and the separate current seller message."""
+    if not isinstance(history, list) or any(
+        not isinstance(turn, Turn)
+        or not isinstance(turn.speaker, str) or turn.speaker.lower() not in {"buyer", "seller"}
+        or not isinstance(turn.text, str)
+        for turn in history
+    ):
+        raise ContractError("history must be a list of Turn(speaker=str, text=str)")
+    if not isinstance(message, str):
+        raise ContractError("message must be a string")
+
+
+def validate_generation_request(decision: PolicyDecision, history: list[Turn], message: str) -> None:
+    """Validate policy-authorized terms without choosing or rendering wording."""
+    validate_public_context(history, message)
+    if not isinstance(decision, PolicyDecision):
+        raise ContractError("decision must be a PolicyDecision")
+    if not isinstance(decision.action, str) or decision.action not in ACTIONS:
+        raise ContractError("unsupported buyer action")
+    if type(decision.finished) is not bool:
+        raise ContractError("finished must be a boolean supplied by policy/tracker")
+    if decision.clarification_reason is not None and decision.action != "clarify":
+        raise ContractError("clarification_reason is only supported for clarify")
+    if decision.price is not None or decision.action in PRICE_ACTIONS:
+        if not isinstance(decision.price, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]{1,2})?", decision.price):
+            raise ContractError("price must be a non-negative SGD decimal string with at most two fractional digits")
+    reference = decision.referenced_offer_id
+    if reference is not None and (not isinstance(reference, str) or not reference.strip()):
+        raise ContractError("referenced_offer_id must be a nonblank string")
+    if decision.action in {"accept", "confirm"} and reference is None:
+        raise ContractError("referenced_offer_id is required for accept and confirm")
+    if decision.action in {"propose", "counter"} and reference is not None:
+        raise ContractError("referenced_offer_id is unsupported for propose and counter")
+    if decision.action == "clarify":
+        reason = decision.clarification_reason
+        if not isinstance(reason, str) or reason not in {
+            "low_confidence", "unresolved_reference", "state_conflict"
+        }:
+            raise ContractError("clarification_reason must be low_confidence, unresolved_reference, or state_conflict")
+        if (reference is None) != (decision.price is None):
+            raise ContractError("specific clarification requires both referenced_offer_id and price")

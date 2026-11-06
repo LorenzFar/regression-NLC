@@ -1,4 +1,4 @@
-"""Buyer response generation and proposed teammate contracts."""
+"""Buyer response generation and pipeline contracts."""
 from .contracts import ContractError, GenerationResult, PolicyDecision, Turn
 from .generator import RetrievalGenerator
 

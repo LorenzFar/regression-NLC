@@ -1,14 +1,10 @@
-"""Injectable orchestration, not a negotiation policy.
-
-Adapters compute against detached values. Tracker.commit computes one transition;
-only Session publishes it, atomically with the generated public turns.
-"""
+"""Run each turn against detached state and publish successful transitions."""
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from time import perf_counter
 from typing import Protocol
 
-from .contracts import ContractError, GenerationResult, PolicyDecision, Turn
+from .contracts import ContractError, GenerationResult, PolicyDecision, Turn, validate_generation_request
 from .generator import RetrievalGenerator
 
 
@@ -141,9 +137,8 @@ class Pipeline:
                 raise ContractError("gate clarification requires an authorized clarify decision")
             if gate.reasons and decision.clarification_reason not in gate.reasons:
                 raise ContractError("clarification_reason must be one of the supplied gate reasons")
-            # Reuse the existing public contract renderer for validation even when
-            # wording comes from an injected generator; this selects no policy.
-            timed("contract_validation", lambda: RetrievalGenerator().generate(
+            # Enforce the public request contract even with an injected generator.
+            timed("contract_validation", lambda: validate_generation_request(
                 decision, list(before.history), message))
             generation = timed("generation", lambda: self.generator.generate(
                 decision, list(before.history), message))

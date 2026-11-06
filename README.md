@@ -2,7 +2,7 @@
 
 Buyer-side, price-only negotiation for CS425. NLU reads the seller message. Policy authorizes a buyer action and price. The generator selects wording; the tracker owns agreement state.
 
-**Working:** checkpoint NLU, template retrieval, pipeline, and replay tests. **Still scripted:** price/reference, policy, gate, and tracker. Example templates are authored fixtures, not a response bank from the training corpus. These examples do not measure model accuracy or negotiation success.
+**Working:** checkpoint NLU, template retrieval, pipeline, and replay tests. **Still scripted:** price/reference, policy, gate, and tracker. Default examples use authored fixtures; the opt-in corpus preview uses a small provisional bank (see below). These examples do not measure model accuracy or negotiation success.
 
 ## Setup and run
 
@@ -113,6 +113,36 @@ The exported sources above are authored examples. Corpus sources need stable `te
 
 Only that span becomes `{price}`. The builder excludes multiple prices, unsupported terms, and mixed actions. These checks do not prove meaning: a person must review real templates. Approval records that decision; it does not perform review. Loading checks training IDs, source consistency, approvals, unique IDs, and context window. Corrupt banks fail explicitly. Use the same `--history-window` in preparation, building, and generation.
 
+### Provisional corpus retrieval (local trial only)
+
+`examples/provisional_craigslist_bank.jsonl` contains **7 real Craigslist buyer
+turns (2 propose, 5 counter)** selected from the preserved 12-row
+`examples/craigslist_review_shortlist.jsonl`. Original responses, public context,
+dialogue/event IDs, numeric spans and source-file hashes are retained. Only the
+validated numeric substring becomes `{price}`; response text never enters ranking.
+
+The bank is **agent-reviewed, not human-approved**: `reviewer="agent:Hermes"`,
+`review_status="agent_reviewed_local_trial"`, `approved=false`,
+`human_approval=false`, `split_status="provisional_official_train"`.
+`build_bank`, `load_bank`, and `RetrievalGenerator` require explicit
+`allow_provisional=True` for these rows; their strict defaults and the human
+approval CLI reject them. Opt-in does not approve the untouched shortlist.
+
+```powershell
+.\.venv\Scripts\python.exe -m examples.corpus_contract
+.\.venv\Scripts\python.exe -m pytest -q tests/test_corpus_preview.py tests/test_bank.py
+```
+
+The preview actually loads this corpus bank. Seven original pre-response contexts
+prove propose/counter retrieval and exact replacement with policy price `73.27`;
+these are **deterministic plumbing proofs, not held-out quality evaluation**.
+It also shows zero-match fallbacks for both actions, fixed accept/confirm/clarify
+wording, and three new seller phrases labeled exploratory. No checkpoint, LLM or
+network is needed. Source prices remain in provenance only, never rendered replies.
+Team split alignment, human semantic review, and currency/SGD suitability remain
+pending. Local activation is not production approval or a claim of improved quality;
+that requires a matched held-out evaluation with the team-aligned split.
+
 ## Replay
 
 Replay runs recorded seller turns as independent test cases. Each restores its own pre-turn history/state. Generated replies never become input to the next recorded case.
@@ -132,7 +162,7 @@ Output has one JSONL record per case/mode, including failures. Traces contain co
 | Ercong | Policy, gate, tracker, offer ownership, and agreement/termination rules |
 | Barry | Gold cases and an agreed method to reconstruct pre-turn state |
 
-Real corpus templates also need human review. These handoffs remain pending. Local planning tickets stay in ignored `.scratch/`.
+Real corpus templates also need human review. These handoffs remain pending.
 
 ## Domain language
 

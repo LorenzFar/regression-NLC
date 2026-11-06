@@ -1,14 +1,13 @@
-"""Conservative candidate preparation; semantic approval remains a human task."""
+"""Conservative preparation; strict human approval or opt-in agent local trials."""
 import argparse
 import copy
 import json
 import re
 from pathlib import Path
 
-from .contracts import ContractError, Turn
+from .contracts import ACTIONS as PUBLIC_ACTIONS, PRICE_ACTIONS, ContractError, Turn, validate_public_context
 
-PRICE_ACTIONS = {"propose", "counter", "accept", "confirm"}
-ACTIONS = PRICE_ACTIONS | {"reject"}
+ACTIONS = PUBLIC_ACTIONS - {"clarify"}
 # Deliberately conservative, not a semantic classifier or buyer-act mapper.
 UNSAFE = re.compile(
     r"\b(if|unless|provided|delivery|deliver|shipping|ship|pickup|collection|collect|"
@@ -33,12 +32,10 @@ def retrieval_context(history, message, history_window=2):
     """
     if type(history_window) is not int or history_window < 0:
         raise ContractError("history_window must be a non-negative integer")
-    if not isinstance(history, list) or any(
-        not isinstance(t, Turn) or not isinstance(t.speaker, str)
-        or t.speaker.lower() not in {"buyer", "seller"}
-        or not isinstance(t.text, str) for t in history
-    ) or not isinstance(message, str):
-        raise ContractError("invalid preceding public context")
+    try:
+        validate_public_context(history, message)
+    except ContractError as exc:
+        raise ContractError("invalid preceding public context") from exc
     turns = history[-history_window:] if history_window else []
     return re.sub(r"\d+(?:[.,]\d+)*", " price ", "\n".join(
         [t.text for t in turns] + [message])).lower()
@@ -96,25 +93,51 @@ def prepare_candidate(source, train_dialogue_ids, history_window=2):
     return row
 
 
-def approve_candidate(candidate, reviewer):
-    """Record a human's explicit semantic review; does not perform that review."""
+def _validate_reviewer(reviewer):
     _nonblank(reviewer, "reviewer")
     if len(reviewer.strip()) < 3 or reviewer.strip().lower() in {"yes", "true", "none", "n/a"}:
-        raise ContractError("reviewer must meaningfully identify the human reviewer")
+        raise ContractError("reviewer must meaningfully identify the reviewer")
+
+
+def approve_candidate(candidate, reviewer):
+    """Record a human's explicit semantic review; does not perform that review."""
+    _validate_reviewer(reviewer)
     result = copy.deepcopy(candidate)
     result.update(approved=True, reviewer=reviewer.strip())
+    _validate_review(result, allow_provisional=False)
     return result
 
 
-def _validate_rows(rows, train_ids, window):
+def _validate_review(row, allow_provisional):
+    _validate_reviewer(row.get("reviewer"))
+    provisional = (row.get("human_approval") is False
+                   or str(row.get("reviewer", "")).lower().startswith("agent:")
+                   or str(row.get("review_status", "")).startswith("agent_")
+                   or str(row.get("split_status", "")).startswith("provisional"))
+    if provisional:
+        if allow_provisional is not True:
+            raise ContractError("provisional agent review requires allow_provisional=True")
+        if not (row.get("origin") == "corpus"
+                and row.get("approved") is False
+                and row.get("human_approval") is False
+                and row.get("review_status") == "agent_reviewed_local_trial"
+                and row.get("reviewer", "").startswith("agent:")
+                and row.get("split_status") == "provisional_official_train"):
+            raise ContractError("invalid provisional local-trial review metadata")
+    elif row.get("approved") is not True:
+        raise ContractError("explicit approval required")
+
+
+def _validate_rows(rows, train_ids, window, allow_provisional=False):
     if not isinstance(rows, list):
         raise ContractError("bank rows must be a list")
     seen = set()
     for row in rows:
         prepared = prepare_candidate(row, train_ids, window)
-        if row.get("approved") is not True:
+        # Unreviewed prepared rows still fail with the ordinary approval error.
+        if row.get("approved") is not True and row.get("reviewer") is None:
             raise ContractError("explicit approval required")
-        approve_candidate(row, row.get("reviewer"))
+        _validate_review(row, allow_provisional)
         if any(row.get(key) != prepared[key] for key in ("template", "context", "history_window")):
             raise ContractError("bank template/context does not match validated source")
         if row["template_id"] in seen:
@@ -123,21 +146,21 @@ def _validate_rows(rows, train_ids, window):
     return rows
 
 
-def build_bank(candidates, path, train_dialogue_ids, history_window=2):
-    """Write approved JSONL, retaining every source (no lossy deduplication)."""
+def build_bank(candidates, path, train_dialogue_ids, history_window=2, *, allow_provisional=False):
+    """Write reviewed JSONL; agent local trials require explicit opt-in."""
     rows = list(candidates)
     # Check window even for an empty bank.
     retrieval_context([], "", history_window)
     ids = sorted(train_dialogue_ids)
     if not ids or any(not isinstance(i, str) or not i.strip() for i in ids):
         raise ContractError("nonempty training dialogue ID allowlist required")
-    _validate_rows(rows, ids, history_window)
+    _validate_rows(rows, ids, history_window, allow_provisional)
     manifest = dict(schema="buyer-response-bank-v1", train_dialogue_ids=ids, history_window=history_window)
     Path(path).write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in [manifest, *rows]) + "\n", encoding="utf-8")
 
 
-def load_bank(path, history_window=None):
-    """Fail closed on corrupt, unapproved, or source-inconsistent artifacts."""
+def load_bank(path, history_window=None, *, allow_provisional=False):
+    """Fail closed; provisional agent local-trial rows require explicit opt-in."""
     try:
         records = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines()]
         manifest, *rows = records
@@ -149,7 +172,7 @@ def load_bank(path, history_window=None):
         retrieval_context([], "", window)
         if history_window is not None and window != history_window:
             raise ContractError("bank/query history_window mismatch; rebuild the bank")
-        return _validate_rows(rows, ids, window)
+        return _validate_rows(rows, ids, window, allow_provisional)
     except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
         raise ContractError(f"invalid response bank: {exc}") from exc
 

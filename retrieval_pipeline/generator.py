@@ -1,10 +1,8 @@
 """Render upstream-authorized buyer decisions without selecting negotiated terms."""
-import re
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .contracts import ContractError, GenerationResult, PolicyDecision, Turn
+from .contracts import ContractError, GenerationResult, PolicyDecision, Turn, validate_generation_request
 
 
 class RetrievalGenerator:
@@ -12,9 +10,10 @@ class RetrievalGenerator:
 
     History is oldest-first and excludes the separate current seller message.
     Banks are validated and TF-IDF statistics fitted once, on train contexts only.
+    Provisional agent-reviewed banks require explicit allow_provisional=True.
     """
 
-    def __init__(self, bank_path=None, history_window=2):
+    def __init__(self, bank_path=None, history_window=2, *, allow_provisional=False):
         # Keep the public bank CLI executable without eager package pre-import.
         from .bank import load_bank
 
@@ -22,7 +21,8 @@ class RetrievalGenerator:
             raise ContractError("history_window must be a non-negative integer")
         self.bank_path = bank_path
         self.history_window = history_window
-        self.bank = [] if bank_path is None else load_bank(bank_path, history_window)
+        self.bank = ([] if bank_path is None else load_bank(
+            bank_path, history_window, allow_provisional=allow_provisional))
         self.vectorizer = TfidfVectorizer()
         contexts = [row["context"] for row in self.bank]
         # Tokenless contexts are valid but cannot support lexical retrieval.
@@ -35,35 +35,7 @@ class RetrievalGenerator:
         finished is validated, not inferred or applied here. A live offer's
         identity/ownership is an upstream reference/tracker responsibility.
         """
-        if not isinstance(history, list) or any(
-            not isinstance(turn, Turn)
-            or not isinstance(turn.speaker, str) or turn.speaker.lower() not in {"buyer", "seller"}
-            or not isinstance(turn.text, str)
-            for turn in history
-        ):
-            raise ContractError("history must be a list of Turn(speaker=str, text=str)")
-        if not isinstance(message, str):
-            raise ContractError("message must be a string")
-        if not isinstance(decision, PolicyDecision):
-            raise ContractError("decision must be a PolicyDecision")
-        if not isinstance(decision.action, str) or decision.action not in {
-            "propose", "counter", "accept", "confirm", "reject", "clarify"
-        }:
-            raise ContractError("unsupported buyer action")
-        if type(decision.finished) is not bool:
-            raise ContractError("finished must be a boolean supplied by policy/tracker")
-        if decision.clarification_reason is not None and decision.action != "clarify":
-            raise ContractError("clarification_reason is only supported for clarify")
-        if decision.price is not None or decision.action in {"propose", "counter", "accept", "confirm"}:
-            if not isinstance(decision.price, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]{1,2})?", decision.price):
-                raise ContractError("price must be a non-negative SGD decimal string with at most two fractional digits")
-        reference = decision.referenced_offer_id
-        if reference is not None and (not isinstance(reference, str) or not reference.strip()):
-            raise ContractError("referenced_offer_id must be a nonblank string")
-        if decision.action in {"accept", "confirm"} and reference is None:
-            raise ContractError("referenced_offer_id is required for accept and confirm")
-        if decision.action in {"propose", "counter"} and reference is not None:
-            raise ContractError("referenced_offer_id is unsupported for propose and counter")
+        validate_generation_request(decision, history, message)
         if decision.action == "clarify":
             generic = {
                 "low_confidence": "Could you clarify what you mean?",
@@ -76,10 +48,7 @@ class RetrievalGenerator:
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
             }
             reason = decision.clarification_reason
-            if not isinstance(reason, str) or reason not in generic:
-                raise ContractError("clarification_reason must be low_confidence, unresolved_reference, or state_conflict")
-            if (reference is None) != (decision.price is None):
-                raise ContractError("specific clarification requires both referenced_offer_id and price")
+            reference = decision.referenced_offer_id
             kind = "generic" if reference is None else "specific"
             text = generic[reason] if reference is None else specific[reason].format(price=decision.price)
             return GenerationResult(

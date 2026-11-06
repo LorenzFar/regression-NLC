@@ -1,36 +1,4 @@
-"""Proposed teammate contract, backed by authored examples, not corpus results.
-
-Run from the repository root: python -m examples.generator_contract
-
-Public API:
-    RetrievalGenerator(bank_path=None, history_window=2)
-        .generate(decision: PolicyDecision, history: list[Turn], message: str)
-        -> GenerationResult
-
-Amounts are non-negative SGD strings: ASCII digits with an optional one- or
- two-digit fraction. No currency, signs, exponent, whitespace, or rounding.
-Spelling is preserved, including trailing/leading zeros. Zero is supported;
-policy owns which amounts to authorize. All contracts are frozen dataclasses.
-History is oldest-first, excluding the separate current seller message.
-
-propose/counter require price and do not take referenced_offer_id.
-accept/confirm require price and a nonblank referenced_offer_id. The reference
-component/tracker, not the generator, proves offer ownership and live validity.
-reject may carry an optional validated price/reference, but does not end a
-session. finished must be a bool; only policy/tracker and pipeline apply it.
-Only clarify accepts clarification_reason. Reasons are low_confidence,
-unresolved_reference, and state_conflict. Omit BOTH offer fields for generic
-questions, or provide BOTH for a specific question; partial details fail.
-Offer IDs are opaque and are not copied into wording as possible extra amounts.
-
-Ticket 01 uses fixed fallback/clarification wording only. Fallbacks have
-source='fallback', fallback_reason='no_bank', template_id='fixed.<action>'.
-Clarifications have source='clarification', no fallback_reason, and a reason/
-specificity-bearing template_id. similarity is None. Retrieval arrives in 02;
-a non-None bank_path currently raises NotImplementedError, never silently loads.
-Invalid requests raise ContractError (ValueError) without mutating inputs.
-These are proposed adapter-facing types, not verified teammate compatibility.
-"""
+"""Demonstrate fixed buyer replies using authored cases."""
 from dataclasses import asdict
 import json
 
