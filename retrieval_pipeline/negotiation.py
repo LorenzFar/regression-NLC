@@ -6,6 +6,7 @@ Only OfferTracker.commit proposes new state; the policy reads it from snapshots.
 """
 import re
 from copy import deepcopy
+from dataclasses import replace
 from decimal import ROUND_DOWN, Decimal
 
 from .contracts import ContractError, PolicyDecision
@@ -19,9 +20,25 @@ def _money(value) -> Decimal:
     return Decimal(str(value)).quantize(CENT, rounding=ROUND_DOWN)
 
 
+OFFER_ACTS = {"propose", "counter"}
+PENDING = "pending_clarification"
+
+
 def top_act(observation) -> tuple[str, float]:
     act = max(observation.probabilities, key=observation.probabilities.get)
     return act, observation.probabilities[act]
+
+
+def offer_confidence(observation) -> tuple[str, float]:
+    """Top act and its confidence; propose and counter count together.
+
+    The policy treats both as "the seller named a price", so the NLU being
+    unsure which of the two it is should not trigger a clarification.
+    """
+    act, probability = top_act(observation)
+    if act in OFFER_ACTS:
+        probability = sum(observation.probabilities.get(name, 0.0) for name in OFFER_ACTS)
+    return act, probability
 
 
 def _live(state) -> list[dict]:
@@ -116,16 +133,62 @@ def _apply_buyer_move(state, action, price):
 class OfferTracker:
     provenance = "rules:offer-tracker"
 
+    def open(self, snapshot, decision):
+        """Buyer speaks first: the listing price is the seller's asking offer."""
+        state = deepcopy(snapshot.state)
+        state.setdefault("offers", [])
+        state.setdefault("agreement", "none")
+        if state.get("listing_price") is not None:
+            _add_offer(state, "seller", state["listing_price"])
+        _apply_buyer_move(state, decision.action, decision.price)
+        return Transition(state, False)
+
     def commit(self, snapshot, observation, gate, decision):
         state = deepcopy(snapshot.state)
         if decision.action == "clarify":
+            # Offers stay untouched; only remember what we asked about, so a
+            # "yes" on the next turn can confirm that reading.
+            act, _ = top_act(observation)
+            state[PENDING] = {"act": act, "price": observation.price_reference.get("price")}
             return Transition(state, False)
+        state.pop(PENDING, None)
         state.setdefault("offers", [])
         state.setdefault("agreement", "none")
         act, _ = top_act(observation)
         _apply_seller_move(state, act, _seller_price(observation))
         _apply_buyer_move(state, decision.action, decision.price)
         return Transition(state, decision.action == "confirm")
+
+
+AFFIRMATION = re.compile(r"^\W*(yes|yeah|yep|yup|correct|right|exactly|that'?s right|indeed|sure)\b", re.I)
+
+
+class ClarificationFollowUp:
+    """A "yes" to our clarifying question confirms the reading we asked about.
+
+    Runs before the gate. If the last buyer turn clarified a seller price and the
+    seller now affirms without naming a new price, the observation becomes that
+    act and price with full confidence. Anything else passes through unchanged.
+    """
+    provenance = "rules:clarification-follow-up"
+
+    def resolve(self, snapshot, observation):
+        pending = snapshot.state.get(PENDING)
+        if not pending or pending.get("price") is None:
+            return observation
+        if observation.price_reference.get("price") is not None or not AFFIRMATION.match(observation.message):
+            return observation
+        # We asked "do you mean <price>?", so a yes means the seller named that price:
+        # an acceptance if it is our live offer, otherwise a seller offer.
+        if pending["act"] == "accept":
+            matches = acceptance_target(snapshot.state, {"price": pending["price"]}) is not None
+            confirmed = "accept" if matches else "counter"
+        else:
+            confirmed = pending["act"] if pending["act"] in OFFER_ACTS else "counter"
+        probabilities = {act: 1.0 if act == confirmed else 0.0 for act in observation.probabilities}
+        reference = {"price": pending["price"], "reference_resolved": True, "status": "resolved",
+                     "reason": "confirmed_after_clarification"}
+        return replace(observation, probabilities=probabilities, price_reference=reference)
 
 
 def _apply_recorded_turn(state, turn):
@@ -190,7 +253,7 @@ class ConfidenceGate:
         self.threshold, self.mode = threshold, mode
 
     def evaluate(self, snapshot, observation):
-        act, probability = top_act(observation)
+        act, probability = offer_confidence(observation)
         reference = observation.price_reference
         reasons = []
         if self.mode != "off" and (
@@ -216,14 +279,27 @@ def _limits(target, walk_away) -> tuple[Decimal, Decimal]:
 
 
 class RulePolicy:
-    """Open at target; concede a fixed fraction toward the seller, never past walk-away."""
+    """Open at target; concede a fixed fraction toward the seller, never past walk-away.
+
+    Accepts a seller price within walk-away once the remaining gap to our next
+    counter is at most close_gap of the seller's price: another round would
+    risk the deal for a small saving.
+    """
     provenance = "rules:concession-policy"
 
-    def __init__(self, target=None, walk_away=None, fraction="0.5"):
+    def __init__(self, target=None, walk_away=None, fraction="0.5", close_gap="0.05"):
         self.limits = None if target is None and walk_away is None else _limits(target, walk_away)
         self.fraction = Decimal(str(fraction))
         if not 0 < self.fraction <= 1:
             raise ContractError("fraction must be in (0, 1]")
+        self.close_gap = Decimal(str(close_gap))
+        if not 0 <= self.close_gap < 1:
+            raise ContractError("close_gap must be in [0, 1)")
+
+    def opening(self, snapshot):
+        """The buyer's first message: offer the target price."""
+        target, _ = self._limits_for(snapshot.state)
+        return PolicyDecision("propose", str(target))
 
     def _limits_for(self, state) -> tuple[Decimal, Decimal]:
         limits = state.get("limits")
@@ -241,6 +317,11 @@ class RulePolicy:
     def decide(self, snapshot, observation, gate):
         state = snapshot.state
         if gate.reasons:
+            seller = _seller_price(observation)
+            # Ask about the price the seller just named, if any.
+            if seller is not None:
+                return PolicyDecision("clarify", str(seller), next_offer_id(state, "seller"),
+                                      clarification_reason=gate.reasons[0])
             live = _live(state)
             if len(live) == 1:
                 return PolicyDecision("clarify", live[0]["terms"]["price"], live[0]["id"],
@@ -256,7 +337,8 @@ class RulePolicy:
         if act in {"propose", "counter"} and seller is not None:
             price = self._next_price(last_buyer, seller, target, walk_away)
             # A repeated price is the seller's final one, so waiting cannot improve it.
-            if seller <= price or (seller == on_record and seller <= walk_away):
+            close = seller <= walk_away and seller - price <= self.close_gap * seller
+            if seller <= price or close or (seller == on_record and seller <= walk_away):
                 return PolicyDecision("accept", str(seller), next_offer_id(state, "seller"))
             if last_buyer == walk_away:
                 return PolicyDecision("reject")

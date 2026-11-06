@@ -11,7 +11,7 @@ from pathlib import Path
 from price_reference import CachingNLU, ReferenceObserver, ReferenceSafetyGate
 
 from .generator import RetrievalGenerator
-from .negotiation import ConfidenceGate, OfferTracker, RulePolicy
+from .negotiation import ClarificationFollowUp, ConfidenceGate, OfferTracker, RulePolicy
 from .pipeline import Pipeline
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -31,7 +31,7 @@ def load_nlu(checkpoint=DEFAULT_CHECKPOINT):
     return CachingNLU(NLUAdapter(str(checkpoint)))
 
 
-def build_agent(nlu, *, listing_price, target, walk_away, fraction="0.5",
+def build_agent(nlu, *, listing_price, target, walk_away, fraction="0.5", close_gap="0.05",
                 gate_mode="full", threshold=0.7, bank=None, generator=None) -> Pipeline:
     """One buyer pipeline for one listing. gate_mode is off, reference_only or full."""
     listing = Decimal(str(listing_price))
@@ -42,7 +42,8 @@ def build_agent(nlu, *, listing_price, target, walk_away, fraction="0.5",
         nlu=nlu,
         price_reference=ReferenceObserver(nlu, listing_price=listing),
         gate=ReferenceSafetyGate(ConfidenceGate(threshold, gate_mode)),
-        policy=RulePolicy(target, walk_away, fraction),
+        policy=RulePolicy(target, walk_away, fraction, close_gap),
         tracker=OfferTracker(),
         generator=generator,
+        follow_up=ClarificationFollowUp(),
     )

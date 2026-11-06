@@ -49,7 +49,7 @@ def test_generic_clarification_uses_only_the_gate_reason(reason, text):
 
 
 @pytest.mark.parametrize(("reason", "text"), [
-    ("low_confidence", "Could you clarify what you mean about the offer of 80.50?"),
+    ("low_confidence", "Could you clarify whether you mean 80.50?"),
     ("unresolved_reference", "Are you referring to the offer of 80.50?"),
     ("state_conflict", "Could you clarify the status of the offer of 80.50?"),
 ])

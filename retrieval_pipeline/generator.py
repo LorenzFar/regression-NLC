@@ -31,11 +31,14 @@ class RetrievalGenerator:
         self.features = (self.vectorizer.fit_transform(contexts)
                          if any(self.vectorizer.build_analyzer()(c) for c in contexts) else None)
 
-    def generate(self, decision: PolicyDecision, history: list[Turn], message: str) -> GenerationResult:
+    def generate(self, decision: PolicyDecision, history: list[Turn], message: str,
+                 *, opening: bool = False) -> GenerationResult:
         """Return authorized wording, or fail without changing inputs/state.
 
         finished is validated, not inferred or applied here. A live offer's
         identity/ownership is an upstream reference/tracker responsibility.
+        opening=True means the buyer speaks first and message is the listing:
+        a greeting is added and offers that react to a seller turn are skipped.
         """
         validate_generation_request(decision, history, message)
         if decision.action == "clarify":
@@ -45,7 +48,7 @@ class RetrievalGenerator:
                 "state_conflict": "Could you clarify the current status of our negotiation?",
             }
             specific = {
-                "low_confidence": "Could you clarify what you mean about the offer of {price}?",
+                "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
             }
@@ -63,7 +66,9 @@ class RetrievalGenerator:
         # Do not repeat wording the buyer already used in this conversation.
         said = {_shape(turn.text) for turn in history if turn.speaker.lower() == "buyer"}
         compatible = [i for i, row in enumerate(self.bank)
-                      if row["action"] in pool and _shape(row["template"]) not in said]
+                      if row["action"] in pool and _shape(row["template"]) not in said
+                      and not (opening and REACTION.match(row["template"]))]
+        greeting = "Hi! I saw your listing. " if opening else ""
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
             reason = "zero_similarity"
@@ -76,7 +81,7 @@ class RetrievalGenerator:
                 index, score = ranked[0]
                 if score > 0:
                     row = self.bank[index]
-                    text = row["template"].format(price=_display(decision.price))
+                    text = greeting + row["template"].format(price=_display(decision.price))
                     return GenerationResult(text=text, action=decision.action, price=decision.price,
                                             template_id=row["template_id"], source="retrieval",
                                             similarity=float(score), origin=row["origin"],
@@ -90,13 +95,19 @@ class RetrievalGenerator:
             "reject": "I cannot accept that offer.",
         }
         return GenerationResult(
-            text=templates[decision.action].format(price=_display(decision.price)),
+            text=greeting + templates[decision.action].format(price=_display(decision.price)),
             action=decision.action,
             price=decision.price,
             template_id=f"fixed.{decision.action}",
             source="fallback",
             fallback_reason=reason,
         )
+
+
+# Openings like "Ok." or "I understand." answer a seller turn, so they cannot open.
+REACTION = re.compile(r"\W*(ok|okay|yes|yeah|great|thats?|that's|sure|well|alright|awesome|sweet|cool|oh|"
+                      r"sounds|nice|excellent|thanks?|hmm+|i understand|i see|understood|no|sorry|wow|"
+                      r"perfect|fair|good)\b", re.I)
 
 
 def _display(price):

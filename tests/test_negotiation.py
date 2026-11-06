@@ -84,6 +84,9 @@ def test_clarification_leaves_state_unchanged():
     state = {"offers": [offer("buyer-1", "buyer", "95.00")], "agreement": "none"}
     results, snapshot = talk(say("accept", p=0.5), state=state)
     assert moves(results) == [("clarify", "95.00")]
+    # Offers are untouched; the tracker only notes what was asked about.
+    pending = snapshot.state.pop("pending_clarification")
+    assert pending == {"act": "accept", "price": None}
     assert snapshot.state == state and not snapshot.finished
 
 
@@ -310,8 +313,15 @@ def test_buyer_accepts_a_price_the_seller_repeats_within_walk_away(price):
 
 
 def test_buyer_keeps_negotiating_while_the_seller_keeps_moving():
-    results, _ = talk(say("propose", "99"), say("counter", "98"), say("counter", "97"))
-    assert moves(results) == [("counter", "80.00"), ("counter", "89.00"), ("counter", "93.00")]
+    results, _ = talk(say("propose", "120"), say("counter", "110"), say("counter", "104"))
+    assert moves(results) == [("counter", "80.00"), ("counter", "95.00"), ("counter", "99.50")]
+
+
+def test_buyer_accepts_when_the_seller_is_within_walk_away_and_the_gap_is_small():
+    # 97 vs our next counter 93: a 4% gap (under close_gap 5%) is not worth another round.
+    results, snapshot = talk(say("propose", "99"), say("counter", "98"), say("counter", "97"))
+    assert moves(results) == [("counter", "80.00"), ("counter", "89.00"), ("accept", "97.00")]
+    assert snapshot.state["agreement"] == "pending"
 
 
 def test_firm_price_above_walk_away_is_rejected_once_there_is_no_room_left():
@@ -366,7 +376,7 @@ def test_policy_never_confirms_an_acceptance_with_no_target_even_with_the_gate_o
 def test_clarification_names_the_live_offer_when_there_is_one():
     state = {"offers": [offer("buyer-4", "buyer", "95.00")], "agreement": "none"}
     results, _ = talk(say("accept", p=0.55), state=state)
-    assert results[0].generation.text == "Could you clarify what you mean about the offer of 95?"
+    assert results[0].generation.text == "Could you clarify whether you mean 95?"
     assert results[0].trace["policy"]["referenced_offer_id"] == "buyer-4"
 
 

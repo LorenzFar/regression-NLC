@@ -147,6 +147,14 @@ Invariants:
 - The buyer opens at `target`.
 - `finished` is set only by `confirm`. A buyer `reject` does not end the session.
 
+### Integration changes (feature/integration)
+
+- **Buyer opens.** `RulePolicy.opening` offers the target; `OfferTracker.open` records the listing price as the seller's asking offer (`seller-1`) and the buyer's target as `buyer-2`. `Pipeline.open(session, context=listing)` runs it.
+- **Close gap.** A seller price at or below walk-away is accepted when it is within `close_gap` (default 5%) of the seller's price from our next counter. Example: seller 260, walk-away 260, next counter 247.50, gap 4.8% → accept.
+- **Offer confidence.** The gate adds P(propose) and P(counter) when the top act is one of them, because the policy treats both as "the seller named a price". "I'm asking 300" at propose 0.51 / counter 0.45 no longer asks for clarification.
+- **Clarify about the seller's price.** When the gate fires and the seller named a price, the policy asks about that price ("Could you clarify whether you mean 250?").
+- **Clarification follow-up.** On a clarify turn the tracker stores `pending_clarification = {act, price}` (offers unchanged). `ClarificationFollowUp` runs before the gate: if the seller then affirms ("yes", "correct", ...) without a new price, the turn is read as that price at full confidence, as an acceptance when it matches our live offer, otherwise as a seller offer. Any other reply is read normally and clears the pending note.
+
 ## 5. Generator (`RetrievalGenerator`, already built)
 
 The generator filters the response bank to buyer utterances of the chosen action. It ranks them by TF-IDF cosine similarity against the last two turns plus the current message, and fills in the policy's price in the `{price}` slot. Clarifications use fixed templates, one for each gate reason. A valid request with no match falls back to a fixed template for the same action.

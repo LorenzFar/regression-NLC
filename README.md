@@ -2,11 +2,11 @@
 
 Buyer-side, price-only negotiation for CS425. NLU reads the seller message. Policy authorizes a buyer action and price. The generator selects wording; the tracker owns agreement state.
 
-**Working end to end:** checkpoint NLU (Farrell), price extraction and reference resolution (Edric, `price_reference/`), rule-based tracker, gate and policy (Ercong, Weijie, `retrieval_pipeline/negotiation.py`), and retrieval generation from a 581-template CraigslistBargain bank (Jiong). `retrieval_pipeline/agent.py` connects them; the web demo and the RQ2 replay both use it. Gold-set results are still pending (see Remaining work).
+**Working end to end:** checkpoint NLU (Farrell), price extraction and reference resolution (Edric, `price_reference/`), rule-based tracker, gate and policy (Ercong, Weijie, `retrieval_pipeline/negotiation.py`), and retrieval generation from a 546-template CraigslistBargain bank (Jiong). `retrieval_pipeline/agent.py` connects them; the web demo and the RQ2 replay both use it. Gold-set results are still pending (see Remaining work).
 
 ## Chatbot demo
 
-You play the seller; the bot is the buyer. Each buyer reply shows the NLU probabilities, extracted price, gate decision, policy action, the corpus sentence the wording came from, the offer ledger, and what the bot would have said with the gate off.
+You play the seller; the bot is the buyer and opens with an offer at its target price. Each buyer reply shows the NLU probabilities, extracted price, gate decision, policy action, the corpus sentence the wording came from, the offer ledger, and what the bot would have said with the gate off.
 
 ```powershell
 $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
@@ -114,6 +114,9 @@ result = pipeline.turn(Session("conversation-1"), seller_message,
 | Policy | `decide(snapshot, observation, gate) -> PolicyDecision` |
 | Generator | `generate(decision, history, message) -> GenerationResult` |
 | Tracker | `commit(snapshot, observation, gate, decision) -> Transition` |
+| Follow-up (optional) | `resolve(snapshot, observation) -> Observation`, runs before the gate |
+
+`pipeline.open(session, context=listing_text)` lets the buyer speak first: it calls `policy.opening(snapshot)` and `tracker.open(snapshot, decision)`, and the generator picks an opening line. A clarification may only add `pending_clarification` to the state; offers and agreement stay unchanged.
 
 NLU receives uppercase `(speaker, text)` history tuples. The gate gets full-precision probabilities. `Transition` contains a state dictionary and boolean `finished`. Collaborators compute from detached inputs; `commit` computes a proposed local transition, not an external database write.
 
@@ -137,25 +140,25 @@ Only that span becomes `{price}`. The builder excludes multiple prices, unsuppor
 
 ### CraigslistBargain response bank
 
-`examples/craigslist_bank.jsonl` holds 581 buyer templates (161 propose, 282 counter, 116 accept, 10 confirm, 12 reject) from the official training dialogues. Build it from the official parsed train file (`artifacts/craigslist/parsed.json`, see the script docstring for the URL):
+`examples/craigslist_bank.jsonl` holds 546 buyer templates (158 propose, 264 counter, 106 accept, 6 confirm, 12 reject) from the official training dialogues. Build it from the official parsed train file (`artifacts/craigslist/parsed.json`, see the script docstring for the URL):
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\build_craigslist_bank.py artifacts\craigslist\parsed.json --output examples\craigslist_bank.jsonl --heldout-output artifacts\craigslist\heldout_cases.jsonl
 .\.venv\Scripts\python.exe scripts\evaluate_generator.py artifacts\craigslist\heldout_cases.jsonl --output artifacts\generator-eval.json
 ```
 
-A buyer message that directly answers a seller message becomes a template when the He et al. parser intent maps to a buyer action, its only number equals the parser's price (agreement may have no number), it does not name items or extra terms (pickup, days, "final offer"), and it passes `bank.prepare_candidate`. 10% of dialogues, chosen by UUID hash, are held out and never enter the bank. Labels come from the parser, so rows carry `review_status="parser_labelled"` and load only with `allow_provisional=True` (`build_agent` sets it). Human review of the bank is still open.
+A buyer message that directly answers a seller message becomes a template when the He et al. parser intent maps to a buyer action, its only number equals the parser's price (agreement may have no number), it has 3 to 25 words, it does not name items or extra terms (pickup, days, "final offer", "can't go higher"), and it passes `bank.prepare_candidate`. 10% of dialogues, chosen by UUID hash, are held out and never enter the bank. Labels come from the parser, so rows carry `review_status="parser_labelled"` and load only with `allow_provisional=True` (`build_agent` sets it). Human review of the bank is still open.
 
-Generator behaviour: retrieval ranks same-action templates by TF-IDF similarity of the last two turns plus the seller message; accept and confirm share wording; templates the buyer already used in the conversation are skipped; whole prices print as `80`, not `80.00` (the decision price is unchanged).
+Generator behaviour: retrieval ranks same-action templates by TF-IDF similarity of the last two turns plus the seller message; accept and confirm share wording; templates the buyer already used in the conversation are skipped; the buyer's opening adds "Hi! I saw your listing." and skips templates that react to a seller turn ("Ok.", "Sounds great!"); whole prices print as `80`, not `80.00` (the decision price is unchanged).
 
-Held-out results (492 buyer turns; every system gets the human buyer's action and price):
+Held-out results (489 buyer turns; every system gets the human buyer's action and price):
 
 | System | Token F1 vs human reply | Distinct-2 | Price kept |
 |---|---:|---:|---:|
-| Fixed fallback sentences | 0.206 | 0.011 | 100% |
+| Fixed fallback sentences | 0.205 | 0.011 | 100% |
 | Random template, same action | 0.207 | 0.280 | 100% |
-| TF-IDF retrieval (used) | 0.213 | 0.259 | 100% |
-| TF-IDF uni+bigram | 0.209 | 0.260 | 100% |
+| TF-IDF retrieval (used) | 0.216 | 0.249 | 100% |
+| TF-IDF uni+bigram | 0.211 | 0.258 | 100% |
 
 Retrieval gives varied, human-sounding wording while always stating the policy's price. Word overlap with the human reply barely separates the systems, so context similarity adds little measurable gain on this metric; a small human rating would be the better test.
 
@@ -222,9 +225,7 @@ RQ1 reports accuracy, macro-F1 with bootstrap CI, per-class F1, confusion matrix
 |---|---|
 | Barry | Hand-labelled gold set (with history act/price labels and listing prices) to run RQ1 and RQ2 for real |
 | Farrell | NLU training script and the k0/k1/k3 checkpoints over three seeds for RQ1 |
-| Weijie | Data loader, label mapping and team split in the repo; the bank currently uses the official train split |
-| Ercong, Weijie | Policy review: a seller price at or below walk-away is countered rather than accepted unless it is at or below the next counter price |
-| Jiong | Human check of the parser-labelled response bank |
+| Jiong | Human check of the parser-labelled response bank (optional; the rule parser labels are the documented source) |
 
 ## Domain language
 

@@ -94,7 +94,8 @@ POSITIVE = re.compile(r"\b(deal|great|awesome|good|perfect|sweet|wonderful|thank
                       r"problem|worries|fine|sure|sign me up)\b", re.I)
 AGREEMENT = re.compile(r"\b(works for me|sounds good|works great|i'?ll take it|it is|is good)\b", re.I)
 # "Final offer" wording would be false whenever the policy concedes again later.
-COMMITMENT = re.compile(r"\b(final|last|highest|max|maximum|most i can|best i can|firm)\b", re.I)
+COMMITMENT = re.compile(r"\b(final|last|highest|max|maximum|most i can|best i can|firm|"
+                        r"can'?t go (above|higher|over|any)|cannot go|no higher|won'?t go)\b", re.I)
 
 
 def wording_problem(action, response):
@@ -144,7 +145,7 @@ def make_row(dialogue, event_index, history, seller, buyer, history_window):
     # "$80" -> "80": the slot holds a bare decimal; the symbol is dropped.
     response = re.sub(r"\$\s*(?=\d)", "", buyer["text"])
     words = response.split()
-    if not 2 <= len(words) <= 25:
+    if not 3 <= len(words) <= 25:
         return None, "length"
     spans = price_spans(response, action, buyer["price"])
     if spans is None:

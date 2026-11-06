@@ -46,7 +46,9 @@ def test_gold_history_restores_live_buyer_offer_and_gate_changes_only_current_tu
     assert reference["policy"]["action"] == "confirm"
     assert full["policy"]["action"] == "clarify"
     assert "low_confidence" in full["gate"]["reasons"]
-    assert full["state_before"]["state"] == full["state_after"]["state"]
+    after = dict(full["state_after"]["state"])
+    assert after.pop("pending_clarification")["act"] == "accept"
+    assert full["state_before"]["state"] == after
     assert all(record["state_before"] == off["state_before"] for record in records)
 
 

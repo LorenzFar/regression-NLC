@@ -566,9 +566,11 @@
           session = created.session_id;
           if (old) await api("reset", { session_id: old }).catch(() => {});
           finished = false;
-          $("messages").replaceChildren(node("div", "You are the seller. Make your opening move.", "empty"));
+          $("messages").replaceChildren();
           $("details").hidden = true;
           $("inspect-empty").hidden = false;
+          // The buyer opens; the seller replies next.
+          bubble("buyer", created.opening.reply, created.opening);
           $("finished").hidden = true;
           $("message").value = "";
         } catch (e) {
@@ -626,7 +628,6 @@
         $("error").textContent = "";
         try {
           const result = await api("turn", { session_id: session, message: text });
-          $("messages").querySelector(".empty")?.remove();
           bubble("seller", text);
           bubble("buyer", result.reply, result);
           $("message").value = "";

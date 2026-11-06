@@ -65,7 +65,25 @@ class DemoApp:
         session_id = uuid4().hex
         session = Session(session_id, state={'listing_price': config['listing_price'], 'offers': [], 'agreement': 'none'})
         self.sessions[session_id] = (session, pipeline, without_gate)
-        return {'session_id': session_id, 'nlu_provenance': self.provenance, 'config': config}
+        # The buyer makes the first move, answering the listing itself.
+        listing = ' '.join(str(data.get(key, '')) for key in ('title', 'description')).strip()
+        result = pipeline.open(session, context=listing)
+        generation = result.generation
+        opening = {**asdict(generation), 'reply': generation.text, **self.wording(pipeline, generation),
+                   'probabilities': {}, 'price_reference': {}, 'policy': result.trace['policy'],
+                   'gate': {'mode': config['gate_mode'], 'reasons': [], 'threshold': config['threshold']},
+                   'offers': result.snapshot.state['offers'], 'agreement': result.snapshot.state['agreement'],
+                   'finished': False, 'opening': True,
+                   'counterfactual': {'reply': generation.text, 'action': generation.action}}
+        return {'session_id': session_id, 'nlu_provenance': self.provenance, 'config': config,
+                'opening': opening}
+
+    @staticmethod
+    def wording(pipeline, generation):
+        """The bank row behind a retrieved reply: its template and original sentence."""
+        row = next((row for row in pipeline.generator.bank if row['template_id'] == generation.template_id), {})
+        return {'template': row.get('template'), 'original_response': row.get('response'),
+                'source_dialogue_id': generation.source_dialogue_id}
 
     def turn(self, data):
         session, pipeline, without_gate = self.lookup(data)
@@ -86,11 +104,8 @@ class DemoApp:
         except Exception as exc:
             counterfactual = {'error': str(exc), 'reply': None, 'action': None}
         generation, trace = result.generation, result.trace
-        row = next((row for row in pipeline.generator.bank if row['template_id'] == generation.template_id), {})
         state = result.snapshot.state
-        return {**asdict(generation), 'reply': generation.text,
-                'template': row.get('template'), 'original_response': row.get('response'),
-                'source_dialogue_id': generation.source_dialogue_id,
+        return {**asdict(generation), 'reply': generation.text, **self.wording(pipeline, generation),
                 'probabilities': trace['probabilities'], 'price_reference': trace['price_reference'],
                 'gate': trace['gate'], 'policy': trace['policy'], 'trace': trace,
                 'offers': state.get('offers', []), 'agreement': state.get('agreement', 'none'),

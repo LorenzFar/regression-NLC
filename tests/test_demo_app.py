@@ -46,7 +46,9 @@ def test_create_turn_trace_and_isolated_counterfactual():
         status, presets = request('/api/scenarios')
         assert status == 200 and len(presets['scenarios']) == 4
         session_id = create(request)
-        assert app.sessions[session_id][0].snapshot().state['listing_price'] == '300'
+        opened = app.sessions[session_id][0].snapshot()
+        assert opened.state['listing_price'] == '300'
+        assert [turn.speaker for turn in opened.history] == ['buyer']  # buyer moves first
         status, turn = request('/api/turn', {'session_id': session_id, 'message': "I'm asking 300 for it"})
         assert status == 200, turn
         assert turn['reply'] and turn['action'] == 'counter'
@@ -56,9 +58,9 @@ def test_create_turn_trace_and_isolated_counterfactual():
         assert turn['trace']['policy'] == turn['policy']
         assert turn['counterfactual']['reply']
         snapshot = app.sessions[session_id][0].snapshot()
-        assert len(snapshot.history) == 2
+        assert len(snapshot.history) == 3
         assert snapshot.state['offers'] == turn['offers']
-        assert len(snapshot.applied_turn_ids) == 1
+        assert len(snapshot.applied_turn_ids) == 2
 
 
 def test_confirmation_finishes_and_rejects_later_input():
@@ -106,4 +108,6 @@ def test_clarification_counterfactual_never_mutates_live_state():
         assert turn['action'] == 'clarify'
         assert 'low_confidence' in turn['gate']['reasons']
         assert turn['counterfactual']['action'] == 'counter'
-        assert app.sessions[session_id][0].snapshot().state == before.state
+        after = app.sessions[session_id][0].snapshot().state
+        assert after.pop('pending_clarification') == {'act': 'counter', 'price': '300.00'}
+        assert after == before.state
