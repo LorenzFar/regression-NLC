@@ -123,6 +123,21 @@ Gate modes are `off`, `reference_only`, and `full`; threshold defaults to `0.7`.
 
 Output has one JSONL record per case/mode, including failures. Traces contain component identities, probabilities, policy, state before/after, generation/provenance, timing, and errors. Exit codes: **0** all cases succeeded; **1** at least one failed; **2** invalid command/input-file setup. Malformed rows report errors without stopping valid rows. A generated candidate in a failed trace was not committed. Fixtures are not gold evaluation data.
 
+## Gold evaluation: NLU and price extraction
+
+The NLU trained on CraigslistBargain train and validation only, so the **test** split is unseen. It has no intent or price labels, so gold labels are added by hand following [evaluation/LABELLING_GUIDE.md](evaluation/LABELLING_GUIDE.md).
+
+```powershell
+# Needs pandas and pyarrow once. Writes data/craigslist_test/: dialogues.jsonl, transcripts.md,
+# all_seller_turns.csv and labelling_sheet.csv (60 sampled dialogues, seed 425).
+.\.venv\Scripts\python.exe -m evaluation.extract_test
+# After filling gold_act and gold_prices:
+.\.venv\Scripts\python.exe -m evaluation.evaluate_nlu data/craigslist_test/labelling_sheet.csv --checkpoint models/nlu_k2_s0.pt
+.\.venv\Scripts\python.exe -m evaluation.evaluate_prices data/craigslist_test/labelling_sheet.csv --predictions prices.csv
+```
+
+The NLU report covers macro-F1 and accuracy with dialogue-bootstrap 95% CIs, a majority baseline, per-act scores, a confusion matrix, calibration (ECE), gate coverage per threshold, accept errors and annotator kappa. The price report covers value, value+role and new-offer precision/recall/F1, role confusion, and a `--baseline digits` reference. Reports go to `artifacts/`.
+
 ## Remaining team handoffs
 
 | Owner | Needed for full integration |
