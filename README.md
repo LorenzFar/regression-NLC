@@ -1,8 +1,33 @@
 # Buyer negotiation agent
 
-Buyer-side, price-only negotiation for CS425. NLU reads the seller message. Policy authorizes a buyer action and price. The generator selects wording; the tracker owns agreement state.
+A buyer chatbot for CS425 that negotiates price with a human seller. You play the seller; the bot is the buyer. It makes the first offer, reads each of your messages, decides what to do with simple rules, and replies using sentences written by real buyers in the CraigslistBargain dataset. When it isn't sure what you meant, it asks instead of guessing.
 
 **Working end to end:** checkpoint NLU (Farrell), price extraction and reference resolution (Edric, `price_reference/`), rule-based tracker, gate and policy (Ercong, Weijie, `retrieval_pipeline/negotiation.py`), and retrieval generation from a 546-template CraigslistBargain bank (Jiong). `retrieval_pipeline/agent.py` connects them; the web demo and the RQ2 replay both use it. Gold-set results are still pending (see Remaining work).
+
+## How it works
+
+Every seller message goes through six steps:
+
+| Step | Owner | What it does | Example |
+|---|---|---|---|
+| 1. Understand | Farrell | DistilBERT labels the message as propose, counter, accept, reject, inquire or vague, using the last few turns as context | "Lowest I'd go is 270" → counter (95%) |
+| 2. Find the price | Edric | Extracts the price, resolves "same as before", and flags prices with conditions | "250 if you collect today" → 250, conditional |
+| 3. Decide whether to ask | Weijie | The clarification gate asks when the NLU is under 70% sure, a reference or condition is unclear, or the message conflicts with the offers | 51% sure → "Could you clarify…?" |
+| 4. Decide what to do | Weijie | Rules with a target and walk-away price choose accept, counter or reject, and the price | Seller 265, bot offered 240 → counter 252 |
+| 5. Write the reply | Jiong | Picks the real buyer sentence that best fits the conversation and inserts the policy's price | "That seems a little pricey. Would you be willing to accept 252?" |
+| 6. Remember the deal | Ercong | Tracks every offer and whether a deal is agreed; confirms only when it's clear which offer was accepted | seller 300, buyer 240, seller 265 … |
+
+The wording only fills in the price the rules chose, so it can never change the terms of the deal.
+
+## How we evaluate it
+
+| Question | How | Status |
+|---|---|---|
+| RQ1: does the NLU do better with earlier messages? | Rule parser vs NLU without history vs NLU with 1–3 turns, macro-F1 on the hand-labelled gold set, 3 seeds | Needs gold set and extra checkpoints |
+| RQ2: does asking stop wrong deal confirmations without too many extra questions? | Same seller turns with the gate off / reference only / full (`retrieval_pipeline/gold_replay.py` → `evaluation/gate_eval.py`) | Runs end to end; needs gold set. On 12 authored practice cases: off 2 wrong confirmations, full 0 with 6 questions |
+| Price finding | Exact-match price and correct-reference rate (`evaluation/price_extractor`, `evaluation/resolver`) | In repo |
+| Reply wording | 489 held-out real buyer turns: overlap with the real reply, variety, price kept (`scripts/evaluate_generator.py`) | Retrieval 0.216 vs fixed sentences 0.205 overlap; variety 0.249 vs 0.011; price kept 100% |
+| Rules | Tests: never above walk-away, price unchanged, correct deal state | Passing |
 
 ## Chatbot demo
 
