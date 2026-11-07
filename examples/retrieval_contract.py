@@ -1,8 +1,4 @@
-"""Authored fixture demonstration, NOT a corpus experiment.
-
-Run from the repository: python -m examples.retrieval_contract
-Use --export-sources DIRECTORY to exercise the separate review/build CLI stages.
-"""
+"""Demonstrate retrieval from an authored fixture bank."""
 import argparse
 import json
 from dataclasses import asdict

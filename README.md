@@ -2,7 +2,73 @@
 
 Buyer-side, price-only negotiation for CS425. NLU reads the seller message. Policy authorizes a buyer action and price. The generator selects wording; the tracker owns agreement state.
 
-**Working:** checkpoint NLU, template retrieval, pipeline, and replay tests. **Still scripted:** price/reference, policy, gate, and tracker. Example templates are authored fixtures, not a response bank from the training corpus. These examples do not measure model accuracy or negotiation success.
+**Working end to end:** checkpoint NLU (Farrell), price extraction and reference resolution (Edric, `price_reference/`), rule-based tracker, gate and policy (Ercong, Weijie, `retrieval_pipeline/negotiation.py`), and retrieval generation from a 546-template CraigslistBargain bank (Jiong). `retrieval_pipeline/agent.py` connects them; the web demo and the RQ2 replay both use it. Gold-set results are still pending (see Remaining work).
+
+## Chatbot demo
+
+You play the seller; the bot is the buyer and opens with an offer at its target price. Each buyer reply shows the NLU probabilities, extracted price, gate decision, policy action, the corpus sentence the wording came from, the offer ledger, and what the bot would have said with the gate off.
+
+```powershell
+$env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
+.\.venv\Scripts\python.exe -m demo_app.server --port 8000
+# open http://127.0.0.1:8000
+```
+
+`--scripted-nlu` swaps in a keyword stand-in (labelled in the header) when torch or the checkpoint is unavailable. `--bank PATH` picks another response bank.
+
+### Things to try (presentation walkthrough)
+
+You play the seller and type your own replies; the buttons under the chat are only examples. Click any buyer message to see, step by step, why it said that.
+
+Use the **City road bike** preset (listed 300; buyer target 240, walk-away 280), gate **Full**, τ 0.7, concession fraction 0.5. Every reply below was produced by the real checkpoint.
+
+| You type (seller) | Buyer replies | What to point out |
+|---|---|---|
+| *(start a new negotiation)* | Hi! I saw your listing. Would you be willing to take 240? | The buyer moves first, at its target. Ledger: seller-1 300 (listing), buyer-2 240 |
+| `That's too low. This bike is pretty new. How about 265?` | That seems a little pricey. Would you be willing to accept 252? | Counter halfway from 240 to 265, rounded down to whole dollars. The wording is a real CraigslistBargain buyer line |
+| `That's way too low, 265 still` | yeah i could do 265, that sounds great! | The seller repeated 265, which is within walk-away, so the policy treats it as final and accepts |
+| `250 if you can collect today` | Could you clarify whether 250 depends on that condition? | The resolver finds a price tied to a condition; the buyer only negotiates price, so the gate asks |
+| `No, I would want 250` | Great then 250 it is then. | A plain 250 is cheaper than the 265 already accepted, so it accepts |
+| `ok` | Ok thanks, We'll do 250. | Confirmed, deal banner, input locked |
+
+Clarification (start a new negotiation for each row group):
+
+| You type | Buyer replies | What to point out |
+|---|---|---|
+| `Deal!` | Okay I can do 240 thanks. | Confirms the opening offer, because there is exactly one live offer |
+| `I can do 270.` then `yes` | Are you referring to the offer of 270? → How about 255? | The NLU reads "I can do 270" as accepting a price that is not on the table, so it asks. "yes" confirms 270 and the buyer counters it |
+| `270 if you can collect today` then `no, 270 either way` | Could you clarify whether 270 depends on that condition? → How about 255? | Restating the price it asked about counts as an answer |
+
+RQ2 in one exchange: start one negotiation with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
+
+| Gate | After `I can do 280.` | After `ok` |
+|---|---|---|
+| Off | That seems a little pricey. Would you be willing to accept 240? | Ok, 240 it is. → deal at 240, which the seller never agreed to |
+| Full | Are you referring to the offer of 280? | How about 260? (280 is now on record); a further `ok` confirms 260 |
+
+### Settings explained
+
+- **Buyer target:** the buyer's opening offer and the price it hopes for.
+- **Walk-away:** the most it will ever pay. It never offers above this and rejects once it has reached it and the seller still wants more.
+- **Concession fraction:** each counter moves this share of the way from the buyer's last offer to the seller's latest price (0.5 = halfway). Counters are rounded down to whole dollars. The buyer accepts when the seller is at or below its next counter, when the seller repeats a price within walk-away, or, after it has countered at least once, when the gap left is at most 5% of the seller's price.
+- **Clarification gate:** decides whether to ask instead of acting. *Full* asks when the NLU's confidence is below τ, when a reference ("same as before") or a conditional price is unresolved, or when the message conflicts with the offers on the table. *Reference only* asks only about references and conditions. *Off* never asks (the RQ2 baseline).
+- **Confidence threshold τ:** the gate asks when the NLU's top probability is below τ. Propose and counter are added together, since both mean "the seller named a price".
+
+## What the integration added
+
+| Area | Change | Where |
+|---|---|---|
+| Integration | All team branches merged; one factory builds NLU → price/reference → gate → policy → generator → tracker | `retrieval_pipeline/agent.py` |
+| Response bank | 546 buyer templates from CraigslistBargain train dialogues, labelled by the He et al. rule parser, 10% of dialogues held out | `scripts/build_craigslist_bank.py`, `examples/craigslist_bank.jsonl` |
+| Generator | Accept and confirm share wording; no repeated templates within a conversation; whole prices print as `80`; opening line with greeting | `retrieval_pipeline/generator.py` |
+| Buyer opens | Buyer offers its target first; listing price recorded as the seller's asking offer | `Pipeline.open`, `RulePolicy.opening`, `OfferTracker.open` |
+| Policy | After at least one counter, accept a seller price within walk-away when the gap to the next counter is ≤ 5% (`close_gap`); demo counters in whole dollars (`whole_dollars`) | `RulePolicy` |
+| Gate | Confidence for offers = P(propose) + P(counter) | `offer_confidence`, `ConfidenceGate` |
+| Clarification | Ask about the seller's named price; conditional prices ("250 if you collect today") get their own question; the buyer remembers the asked price, and a following "yes", "ok" or restated price confirms it | `ClarificationFollowUp`, `pending_clarification`, `conditional_price` |
+| Evaluation | Generator comparison on held-out turns; full-pipeline RQ2 replay for the gold set | `scripts/evaluate_generator.py`, `retrieval_pipeline/gold_replay.py` |
+| Demo | Local chat UI: equal-height scrolling panels, step-by-step explanation of each reply, gate-off comparison, `?say=msg1\|msg2` replays a scripted conversation | `demo_app/` |
+
+Design details for the negotiation changes: `docs/negotiation.md` → Integration changes.
 
 ## Setup and run
 
@@ -45,6 +111,16 @@ The demo covers two retrieval matches, one fixed fallback, and one clarification
 | `retrieval_pipeline/fixtures.py` | Scripted collaborators for examples and tests |
 | `retrieval_pipeline/replay.py` | Independent recorded cases and JSONL export |
 | `examples/`, `tests/` | Runnable contracts, authored cases, and regression tests |
+| `retrieval_pipeline/negotiation.py` | Offer tracker, recorded-dialogue tracking, confidence gate, concession policy, `build_buyer_pipeline` |
+| `docs/negotiation.md` | Design and worked trace for the tracker, gate, and policy |
+| `price_reference/` | Price extraction, offer ledger, reference resolver, resolver safety gate |
+| `baseline_parser/` | Rule-based parser from He et al. (2018), the RQ1 baseline |
+| `retrieval_pipeline/agent.py` | `build_agent`: all components in one pipeline, used by the demo and RQ2 replay |
+| `retrieval_pipeline/gold_replay.py` | Replays gold seller turns through the full pipeline in each gate mode |
+| `scripts/build_craigslist_bank.py` | Builds the corpus response bank and the held-out generator cases |
+| `scripts/evaluate_generator.py` | Compares fixed, random and retrieved wording on held-out turns |
+| `demo_app/` | Local web chat demo (standard library server, one HTML page) |
+| `evaluation/` | RQ1/RQ2 metrics, price-extractor and resolver evaluation |
 
 ## Generator contract
 
@@ -92,6 +168,9 @@ result = pipeline.turn(Session("conversation-1"), seller_message,
 | Policy | `decide(snapshot, observation, gate) -> PolicyDecision` |
 | Generator | `generate(decision, history, message) -> GenerationResult` |
 | Tracker | `commit(snapshot, observation, gate, decision) -> Transition` |
+| Follow-up (optional) | `resolve(snapshot, observation) -> Observation`, runs before the gate |
+
+`pipeline.open(session, context=listing_text)` lets the buyer speak first: it calls `policy.opening(snapshot)` and `tracker.open(snapshot, decision)`, and the generator picks an opening line. A clarification may only add `pending_clarification` to the state; offers and agreement stay unchanged.
 
 NLU receives uppercase `(speaker, text)` history tuples. The gate gets full-precision probabilities. `Transition` contains a state dictionary and boolean `finished`. Collaborators compute from detached inputs; `commit` computes a proposed local transition, not an external database write.
 
@@ -113,6 +192,60 @@ The exported sources above are authored examples. Corpus sources need stable `te
 
 Only that span becomes `{price}`. The builder excludes multiple prices, unsupported terms, and mixed actions. These checks do not prove meaning: a person must review real templates. Approval records that decision; it does not perform review. Loading checks training IDs, source consistency, approvals, unique IDs, and context window. Corrupt banks fail explicitly. Use the same `--history-window` in preparation, building, and generation.
 
+### CraigslistBargain response bank
+
+`examples/craigslist_bank.jsonl` holds 546 buyer templates (158 propose, 264 counter, 106 accept, 6 confirm, 12 reject) from the official training dialogues. Build it from the official parsed train file (`artifacts/craigslist/parsed.json`, see the script docstring for the URL):
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_craigslist_bank.py artifacts\craigslist\parsed.json --output examples\craigslist_bank.jsonl --heldout-output artifacts\craigslist\heldout_cases.jsonl
+.\.venv\Scripts\python.exe scripts\evaluate_generator.py artifacts\craigslist\heldout_cases.jsonl --output artifacts\generator-eval.json
+```
+
+A buyer message that directly answers a seller message becomes a template when the He et al. parser intent maps to a buyer action, its only number equals the parser's price (agreement may have no number), it has 3 to 25 words, it does not name items or extra terms (pickup, days, "final offer", "can't go higher"), and it passes `bank.prepare_candidate`. 10% of dialogues, chosen by UUID hash, are held out and never enter the bank. Labels come from the parser, so rows carry `review_status="parser_labelled"` and load only with `allow_provisional=True` (`build_agent` sets it). Human review of the bank is still open.
+
+Generator behaviour: retrieval ranks same-action templates by TF-IDF similarity of the last two turns plus the seller message; accept and confirm share wording; templates the buyer already used in the conversation are skipped; the buyer's opening adds "Hi! I saw your listing." and skips templates that react to a seller turn ("Ok.", "Sounds great!"); whole prices print as `80`, not `80.00` (the decision price is unchanged).
+
+Held-out results (489 buyer turns; every system gets the human buyer's action and price):
+
+| System | Token F1 vs human reply | Distinct-2 | Price kept |
+|---|---:|---:|---:|
+| Fixed fallback sentences | 0.205 | 0.011 | 100% |
+| Random template, same action | 0.207 | 0.280 | 100% |
+| TF-IDF retrieval (used) | 0.216 | 0.249 | 100% |
+| TF-IDF uni+bigram | 0.211 | 0.258 | 100% |
+
+Retrieval gives varied, human-sounding wording while always stating the policy's price. Word overlap with the human reply barely separates the systems, so context similarity adds little measurable gain on this metric; a small human rating would be the better test.
+
+### Provisional corpus retrieval (local trial only)
+
+`examples/provisional_craigslist_bank.jsonl` contains **7 real Craigslist buyer
+turns (2 propose, 5 counter)** selected from the preserved 12-row
+`examples/craigslist_review_shortlist.jsonl`. Original responses, public context,
+dialogue/event IDs, numeric spans and source-file hashes are retained. Only the
+validated numeric substring becomes `{price}`; response text never enters ranking.
+
+The bank is **agent-reviewed, not human-approved**: `reviewer="agent:Hermes"`,
+`review_status="agent_reviewed_local_trial"`, `approved=false`,
+`human_approval=false`, `split_status="provisional_official_train"`.
+`build_bank`, `load_bank`, and `RetrievalGenerator` require explicit
+`allow_provisional=True` for these rows; their strict defaults and the human
+approval CLI reject them. Opt-in does not approve the untouched shortlist.
+
+```powershell
+.\.venv\Scripts\python.exe -m examples.corpus_contract
+.\.venv\Scripts\python.exe -m pytest -q tests/test_corpus_preview.py tests/test_bank.py
+```
+
+The preview actually loads this corpus bank. Seven original pre-response contexts
+prove propose/counter retrieval and exact replacement with policy price `73.27`;
+these are **deterministic plumbing proofs, not held-out quality evaluation**.
+It also shows zero-match fallbacks for both actions, fixed accept/confirm/clarify
+wording, and three new seller phrases labeled exploratory. No checkpoint, LLM or
+network is needed. Source prices remain in provenance only, never rendered replies.
+Team split alignment, human semantic review, and currency/SGD suitability remain
+pending. Local activation is not production approval or a claim of improved quality;
+that requires a matched held-out evaluation with the team-aligned split.
+
 ## Replay
 
 Replay runs recorded seller turns as independent test cases. Each restores its own pre-turn history/state. Generated replies never become input to the next recorded case.
@@ -123,16 +256,30 @@ Gate modes are `off`, `reference_only`, and `full`; threshold defaults to `0.7`.
 
 Output has one JSONL record per case/mode, including failures. Traces contain component identities, probabilities, policy, state before/after, generation/provenance, timing, and errors. Exit codes: **0** all cases succeeded; **1** at least one failed; **2** invalid command/input-file setup. Malformed rows report errors without stopping valid rows. A generated candidate in a failed trace was not committed. Fixtures are not gold evaluation data.
 
-## Remaining team handoffs
+## Evaluation (RQ1 and RQ2)
 
-| Owner | Needed for full integration |
+`evaluation/` turns gold labels and the files this repo already writes into the numbers for the report. It needs no checkpoint to run its own tests. Schema and field meanings: `evaluation/data.py`; example rows: `examples/gold_template.jsonl` (authored placeholders, not gold data).
+
+```powershell
+# RQ1: baseline predictions file + one checkpoint per variant/seed ("label@seed" pools seeds into mean +/- std)
+.\.venv\Scripts\python.exe -m evaluation.nlu_eval --gold gold.jsonl --predictions parser=parser_preds.jsonl --system k0@0=models/nlu_k0_s0.pt --system k2@0=models/nlu_k2_s0.pt --output artifacts/rq1.json
+
+# RQ2: replay gold seller turns through the FULL pipeline in all gate modes, then score them
+.\.venv\Scripts\python.exe -m retrieval_pipeline.gold_replay gold.jsonl --checkpoint models/nlu_k2_s0.pt --output artifacts/replay.jsonl
+.\.venv\Scripts\python.exe -m evaluation.gate_eval --replay artifacts/replay.jsonl --gold gold.jsonl --thresholds 0.5 0.6 0.7 0.8 0.9 --output artifacts/rq2.json
+```
+
+RQ1 reports accuracy, macro-F1 with bootstrap CI, per-class F1, confusion matrix, per-challenge-tag accuracy, calibration (ECE, NLL, Brier, risk-coverage), exact McNemar and a paired bootstrap of the macro-F1 difference against the baseline. RQ2 reports incorrect and correct confirmations, clarification count, extra turns, unnecessary clarifications, gate precision/recall/F1 and a tau sweep with the expected result of a random gate that asks equally often. The sweep re-derives the gate from recorded probabilities and flags, so it assumes the policy differs from `off` only by emitting `clarify`. It does not include the resolver checks or tracker state conflicts of the integrated gate, so report `by_mode` for the real comparison.
+
+`gold_replay` rebuilds the pre-turn tracker state with `track_turns`: from gold `act`/`price` labels when every history turn has them, otherwise from predictions (documented in the module). Gold rows may carry `listing_price`, `target` and `walk_away`; otherwise the listing price is estimated from the largest amount mentioned. `examples/challenge_demo.jsonl` has 12 authored cases (`origin="authored_demo"`, not gold) for showing the mechanics: with the real checkpoint, gate off made 2 incorrect confirmations, full gate made 0 at the cost of 6 clarifications (1 unnecessary).
+
+## Remaining work
+
+| Owner | Needed |
 |---|---|
-| Weijie | Training splits, buyer roles, and buyer-action labels for the response bank |
-| Edric | Price extraction, validated source spans, and offer-reference resolution |
-| Ercong | Policy, gate, tracker, offer ownership, and agreement/termination rules |
-| Barry | Gold cases and an agreed method to reconstruct pre-turn state |
-
-Real corpus templates also need human review. These handoffs remain pending. Local planning tickets stay in ignored `.scratch/`.
+| Barry | Hand-labelled gold set (with history act/price labels and listing prices) to run RQ1 and RQ2 for real |
+| Farrell | NLU training script and the k0/k1/k3 checkpoints over three seeds for RQ1 |
+| Jiong | Human check of the parser-labelled response bank (optional; the rule parser labels are the documented source) |
 
 ## Domain language
 

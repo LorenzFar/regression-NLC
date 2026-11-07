@@ -14,9 +14,9 @@ def test_history_rejects_nonpublic_speakers(speaker):
 
 @pytest.mark.parametrize(("decision", "text"), [
     (PolicyDecision("propose", "90"), "I can offer 90."),
-    (PolicyDecision("accept", "90.00", "seller-offer-1"), "I accept your offer of 90.00."),
+    (PolicyDecision("accept", "90.00", "seller-offer-1"), "I accept your offer of 90."),
     (PolicyDecision("confirm", "90.00", "buyer-offer-1", finished=True),
-     "Thank you for accepting my offer of 90.00."),
+     "Thank you for accepting my offer of 90."),
     (PolicyDecision("reject"), "I cannot accept that offer."),
     (PolicyDecision("reject", finished=True), "I cannot accept that offer."),
 ])
@@ -49,7 +49,7 @@ def test_generic_clarification_uses_only_the_gate_reason(reason, text):
 
 
 @pytest.mark.parametrize(("reason", "text"), [
-    ("low_confidence", "Could you clarify what you mean about the offer of 80.50?"),
+    ("low_confidence", "Could you clarify whether you mean 80.50?"),
     ("unresolved_reference", "Are you referring to the offer of 80.50?"),
     ("state_conflict", "Could you clarify the status of the offer of 80.50?"),
 ])
@@ -127,7 +127,9 @@ def test_invalid_prices_raise_contract_error_without_inventing_or_rounding(price
                                   "123456789012345678901234567890.12"])
 def test_supported_decimal_strings_are_preserved_verbatim(price):
     result = RetrievalGenerator().generate(PolicyDecision("propose", price), [], "200")
-    assert result.text == f"I can offer {price}."
+    # Whole amounts drop ".00" in the text only; the decision price is unchanged.
+    shown = price[:-3] if price.endswith(".00") else price
+    assert result.text == f"I can offer {shown}."
     assert result.price == price
 
 

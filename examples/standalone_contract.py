@@ -1,8 +1,4 @@
-"""Combined standalone demo; authored cases are not corpus or evaluation evidence.
-
-Uses the existing replay CLI and Pipeline.turn, not a second conversation engine.
-Without --checkpoint NLU is explicitly scripted; with it only NLU becomes real.
-"""
+"""Run authored cases with scripted NLU or a supplied checkpoint."""
 import argparse
 from pathlib import Path
 
