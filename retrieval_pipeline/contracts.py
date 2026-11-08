@@ -98,9 +98,9 @@ def validate_generation_request(decision: PolicyDecision, history: list[Turn], m
     if decision.action == "clarify":
         reason = decision.clarification_reason
         if not isinstance(reason, str) or reason not in {
-            "low_confidence", "unresolved_reference", "state_conflict", "conditional_price", "unclear_message", "collection_day"
+            "low_confidence", "unresolved_reference", "state_conflict", "conditional_price", "unclear_message", "collection_day", "price_mismatch"
         }:
             raise ContractError("clarification_reason must be low_confidence, unresolved_reference, "
-                                "state_conflict, conditional_price, unclear_message, or collection_day")
+                                "state_conflict, conditional_price, unclear_message, collection_day, or price_mismatch")
         if (reference is None) != (decision.price is None):
             raise ContractError("specific clarification requires both referenced_offer_id and price")

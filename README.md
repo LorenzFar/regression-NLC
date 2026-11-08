@@ -33,7 +33,7 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 Use the **City road bike** preset: listing **300**, target **240**, walk-away **280**, concession fraction **0.5**, gate **Full**, confidence threshold **0.7**. Start a **new negotiation for each row**. The buyer opens at 240. Send each numbered seller message separately, waiting for the reply before the next one.
 
-These conversations were checked through the live frontend with `models/nlu_k2_s0.pt` and the current response bank. Check the **action and price** in the diagnostics: retrieved wording can sound like agreement even when the action is `counter`.
+These conversations were checked through the live frontend with `models/nlu_k2_s0.pt` and the current response bank; the updated different-price clarification below was rechecked directly through the same pipeline, not the frontend. Check the **action and price** in the diagnostics: retrieved wording can sound like agreement even when the action is `counter`.
 
 #### Price negotiation
 
@@ -54,7 +54,7 @@ These conversations were checked through the live frontend with `models/nlu_k2_s
 | Explicit acceptance | 1. `I accept your offer.` | Confirm 240 and end the conversation. |
 | Refer to an earlier offer | 1. `I could do 270.`<br>2. `Actually, let’s go with the earlier offer.`<br>3. `I mean 240.` | Counter 255 → “Which offer are you referring to?” → accept 240. |
 | Refer to another price | 1. `I agree to the other price`<br>2. `I mean 240.` | Ask which offer → accept 240. |
-| Name a different price while agreeing | 1. `Deal at 300`<br>2. `yes` | “That doesn't match my current offer. Are you referring to my offer of 240?” → confirm 240. Here, `yes` agrees to the question about **240**, not 300. |
+| Name a different price while agreeing | 1. `Deal at 300`<br>2. `yes` (or `no`) | “Are you asking for 300?” → `yes` sends seller price 300 through the normal price rules (counter 270); `no` asks “What price are you asking for?” Offers stay unchanged while clarifying. |
 | Answer a question about the seller's price | 1. `I can do 280.`<br>2. `ok`<br>3. `ok` | Ask whether the seller means 280 → counter 260 → confirm 260. The first `ok` answers the question; the second accepts the counteroffer. |
 
 Clarification leaves the recorded offers unchanged. `Maybe.` asks “Could you clarify what you mean?” in Full mode. `I accept your offer.` confirms a matching live buyer offer. After the buyer **accepts** a seller price, `Okay, deal.` can be used to confirm it.
@@ -202,7 +202,7 @@ print(result.text)
 | `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, or `clarify` |
 | `price` | Nonnegative SGD decimal string, at most two decimal places. Required for propose/counter/accept/confirm. Never rounded. |
 | `referenced_offer_id` | Nonblank offer ID for accept/confirm. Upstream validates ownership and whether the offer remains valid. |
-| `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, `state_conflict`, `conditional_price`, `collection_day`, or `unclear_message`. Offer-specific clarification needs both offer ID and price. |
+| `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, `state_conflict`, `conditional_price`, `collection_day`, `price_mismatch`, or `unclear_message`. Offer-specific clarification needs both offer ID and price. |
 | `finished` | Supplied by policy; the tracker transition decides whether the session ends. |
 | `offer_context` | Optional `OfferContext` containing the previous buyer price and the current resolved seller price. Used to check increase and midpoint wording. |
 

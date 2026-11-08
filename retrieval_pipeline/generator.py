@@ -52,6 +52,7 @@ class RetrievalGenerator:
                 "state_conflict": "Could you clarify the current status of our negotiation?",
                 "conditional_price": "What price would you accept without that condition?",
                 "collection_day": "What price would you accept for self-collection on another day?",
+                "price_mismatch": "What price are you asking for?",
             }
             specific = {
                 "low_confidence": "Could you clarify whether you mean {price}?",
@@ -59,6 +60,7 @@ class RetrievalGenerator:
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
                 "conditional_price": "Would you accept {price} without that condition?",
                 "collection_day": "Would you accept {price} if I collect on another day?",
+                "price_mismatch": "Are you asking for {price}?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
