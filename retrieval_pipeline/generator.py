@@ -70,7 +70,8 @@ class RetrievalGenerator:
         said = {_shape(turn.text) for turn in history if turn.speaker.lower() == "buyer"}
         compatible = [i for i, row in enumerate(self.bank)
                       if row["action"] in pool and _shape(row["template"]) not in said
-                      and not (opening and not OFFER_START.match(row["template"]))]
+                      and not (opening and not OFFER_START.match(row["template"]))
+                      and _context_eligible(row["template"], decision, history, message, opening)]
         greeting = "Hi! I saw your listing. " if opening else ""
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
@@ -85,7 +86,6 @@ class RetrievalGenerator:
                 if score > 0:
                     row = self.bank[index]
                     text = greeting + row["template"].format(price=_display(decision.price))
-                    text = _with_increase(text, decision, history, opening)
                     return GenerationResult(text=text, action=decision.action, price=decision.price,
                                             template_id=row["template_id"], source="retrieval",
                                             similarity=float(score), origin=row["origin"],
@@ -109,8 +109,7 @@ class RetrievalGenerator:
                     template, template_id = wording, f"fixed.counter.{suffix}"
                     break
         return GenerationResult(
-            text=_with_increase(greeting + template.format(price=_display(decision.price)),
-                                decision, history, opening),
+            text=greeting + template.format(price=_display(decision.price)),
             action=decision.action,
             price=decision.price,
             template_id=template_id,
@@ -125,7 +124,7 @@ OFFER_START = re.compile(r"\W*(would|will|could|can|how about|what about|is|are|
                          r"i('d| would| could| can)? ?(like to )?(offer|do|pay))\b", re.I)
 
 
-# Recognize plain offers only to ground the optional prefix, never to filter retrieval.
+# Parse evidence conservatively; ordinary bank wording is not an allowlist.
 OFFER_WORDING = (
     r"(?:(?:would|will|could|can) you (?:be willing to )?(?:take|accept|do|consider)|"
     r"how about|what about|could we (?:agree on|make it)|"
@@ -136,21 +135,44 @@ PLAIN_OFFER = re.compile(
     "(?:" + OFFER_WORDING.replace(r"\{price\}", r"(?P<price>[0-9]+(?:\.[0-9]{1,2})?)")
     + r")[.?!]*", re.I,
 )
-INCREASE_PREFIX = "I've increased my offer. "
+INCREASE_WORDING = re.compile(
+    r"\b(?:go(?:ing)? up|rais(?:e|ed|ing) my offer|increas(?:e|ed|ing) my offer)\b", re.I,
+)
+MIDPOINT_WORDING = re.compile(
+    r"\b(?:half[ -]?way|split (?:the difference|difference|it at))\b", re.I,
+)
+BARE_OFFER = re.compile(r"\$?\s*(?P<price>[0-9]+(?:\.[0-9]{1,2})?)[.?!]*")
 
 
-def _with_increase(text, decision, history, opening):
-    """Add a grounded concession once, without stacking onto richer wording."""
-    if opening or decision.action != "counter" or not PLAIN_OFFER.fullmatch(text.strip()):
-        return text
-    buyers = [turn.text for turn in history if turn.speaker.lower() == "buyer"]
-    if not buyers or any(INCREASE_PREFIX.strip().lower() in turn.lower() for turn in buyers):
-        return text
-    previous = buyers[-1].removeprefix("Hi! I saw your listing. ")
-    offer = PLAIN_OFFER.fullmatch(previous.strip())
-    if offer and Decimal(decision.price) > Decimal(offer["price"]):
-        return INCREASE_PREFIX + text
-    return text
+def _offer_price(text):
+    """Only explicit plain offers or price-only turns count as evidence."""
+    text = text.strip().removeprefix("Hi! I saw your listing. ")
+    offer = PLAIN_OFFER.fullmatch(text) or BARE_OFFER.fullmatch(text)
+    return Decimal(offer["price"]) if offer else None
+
+
+def _context_eligible(template, decision, history, message, opening):
+    """Gate comparative claims only; never infer an offer from arbitrary numbers."""
+    increase = INCREASE_WORDING.search(template)
+    midpoint = MIDPOINT_WORDING.search(template)
+    if not (increase or midpoint):
+        return True
+    if opening or decision.price is None:
+        return False
+    # Do not search past an ambiguous latest buyer turn for a stale offer.
+    previous = next((turn.text for turn in reversed(history)
+                     if turn.speaker.lower() == "buyer"), "")
+    buyer = _offer_price(previous)
+    if buyer is None:
+        return False
+    price = Decimal(decision.price)
+    if increase and price <= buyer:
+        return False
+    if midpoint:
+        seller = _offer_price(message)
+        if seller is None or price != (buyer + seller) / 2:
+            return False
+    return True
 
 
 def _display(price):
@@ -160,5 +182,6 @@ def _display(price):
 
 def _shape(text):
     """Wording with numbers and slots blanked, for spotting repeated templates."""
-    text = text.strip().lower().removeprefix(INCREASE_PREFIX.lower())
+    # Normalize prefixes emitted by older versions, without adding them anew.
+    text = text.strip().lower().removeprefix("i've increased my offer. ")
     return re.sub(r"\{price\}|\d+(?:\.\d+)?", "#", text)
