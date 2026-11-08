@@ -109,6 +109,11 @@ def demotion(text, mention, speaker="seller"):
     cancelled = later_cancellation(text, mention)
     if cancelled:
         return cancelled
+    # This buyer question checks a seller's conditional price; it is not an offer.
+    if speaker.lower() == "buyer" and re.fullmatch(
+        r"\s*Would you accept \$?\d[\d,.]* (?:without that condition|if I collect on another day)\s*", local, re.I
+    ):
+        return "quoted_price"
     if (CLARIFICATION.search(local) or PRICE_QUOTE.search(local)) and not NEW_PROPOSAL.search(local):
         return "quoted_price"
     floor = floor_price(text, mention, speaker)

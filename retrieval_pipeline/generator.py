@@ -1,5 +1,6 @@
 """Render upstream-authorized buyer decisions without selecting negotiated terms."""
 import re
+from decimal import Decimal
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -39,25 +40,35 @@ class RetrievalGenerator:
         identity/ownership is an upstream reference/tracker responsibility.
         opening=True means the buyer speaks first and message is the listing:
         a greeting is added and offers that react to a seller turn are skipped.
+        Comparative wording needs decision.offer_context from upstream; callers
+        omitting it can still retrieve ordinary wording without reparsing text.
         """
         validate_generation_request(decision, history, message)
         if decision.action == "clarify":
             generic = {
                 "low_confidence": "Could you clarify what you mean?",
+                "unclear_message": "Could you clarify what you mean?",
                 "unresolved_reference": "Which offer are you referring to?",
                 "state_conflict": "Could you clarify the current status of our negotiation?",
-                "conditional_price": "Could you clarify whether your price depends on a condition?",
+                "conditional_price": "What price would you accept without that condition?",
+                "collection_day": "What price would you accept for self-collection on another day?",
             }
             specific = {
                 "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
-                "conditional_price": "Could you clarify whether {price} depends on that condition?",
+                "conditional_price": "Would you accept {price} without that condition?",
+                "collection_day": "Would you accept {price} if I collect on another day?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
             kind = "generic" if reference is None else "specific"
             text = generic[reason] if reference is None else specific[reason].format(price=_display(decision.price))
+            # Tracker ids are "<owner>-<n>". A conflict about our own offer means the
+            # seller's words do not match it, so say so instead of asking for "status".
+            if reason == "state_conflict" and reference is not None and reference.startswith("buyer-"):
+                text = ("That doesn't match my current offer. "
+                        f"Are you referring to my offer of {_display(decision.price)}?")
             return GenerationResult(
                 text=text, action=decision.action, price=decision.price,
                 template_id=f"fixed.clarify.{reason}.{kind}", source="clarification",
@@ -69,7 +80,8 @@ class RetrievalGenerator:
         said = {_shape(turn.text) for turn in history if turn.speaker.lower() == "buyer"}
         compatible = [i for i, row in enumerate(self.bank)
                       if row["action"] in pool and _shape(row["template"]) not in said
-                      and not (opening and not OFFER_START.match(row["template"]))]
+                      and not (opening and not OFFER_START.match(row["template"]))
+                      and _context_eligible(row["template"], decision, opening)]
         greeting = "Hi! I saw your listing. " if opening else ""
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
@@ -96,11 +108,23 @@ class RetrievalGenerator:
             "confirm": "Thank you for accepting my offer of {price}.",
             "reject": "I cannot accept that offer.",
         }
+        template = templates[decision.action]
+        template_id = f"fixed.{decision.action}"
+        if decision.action == "counter" and not opening:
+            for suffix, wording in (
+                ("", templates["counter"]),
+                ("agreement", "Could we agree on {price}?"),
+                ("workable", "Would {price} work for you?"),
+            ):
+                if _shape(wording) not in said:
+                    template = wording
+                    template_id = f"fixed.counter.{suffix}" if suffix else "fixed.counter"
+                    break
         return GenerationResult(
-            text=greeting + templates[decision.action].format(price=_display(decision.price)),
+            text=greeting + template.format(price=_display(decision.price)),
             action=decision.action,
             price=decision.price,
-            template_id=f"fixed.{decision.action}",
+            template_id=template_id,
             source="fallback",
             fallback_reason=reason,
         )
@@ -112,6 +136,38 @@ OFFER_START = re.compile(r"\W*(would|will|could|can|how about|what about|is|are|
                          r"i('d| would| could| can)? ?(like to )?(offer|do|pay))\b", re.I)
 
 
+# Detect comparative claims, not prices: offers come from the policy/tracker.
+INCREASE_WORDING = re.compile(
+    r"\b(?:go(?:ing)? up|rais(?:e|ed|ing) my offer|increas(?:e|ed|ing) my offer)\b", re.I,
+)
+MIDPOINT_WORDING = re.compile(
+    r"\b(?:half[ -]?way|split (?:the difference|difference|it at))\b", re.I,
+)
+
+
+def _context_eligible(template, decision, opening):
+    """Gate comparative claims using structured offers, never dialogue parsing."""
+    increase = INCREASE_WORDING.search(template)
+    midpoint = MIDPOINT_WORDING.search(template)
+    if not (increase or midpoint):
+        return True
+    context = decision.offer_context
+    if (opening or decision.price is None or context is None
+            or context.previous_buyer_price is None):
+        return False
+    buyer = Decimal(context.previous_buyer_price)
+    price = Decimal(decision.price)
+    if increase and price <= buyer:
+        return False
+    if midpoint:
+        if context.current_seller_price is None:
+            return False
+        seller = Decimal(context.current_seller_price)
+        if price != (buyer + seller) / 2:
+            return False
+    return True
+
+
 def _display(price):
     """Write whole amounts as people do ("80", not "80.00"); the value is unchanged."""
     return price[:-3] if price is not None and price.endswith(".00") else price
@@ -119,4 +175,6 @@ def _display(price):
 
 def _shape(text):
     """Wording with numbers and slots blanked, for spotting repeated templates."""
-    return re.sub(r"\{price\}|\d+(?:\.\d+)?", "#", text).strip().lower()
+    # Normalize prefixes emitted by older versions, without adding them anew.
+    text = text.strip().lower().removeprefix("i've increased my offer. ")
+    return re.sub(r"\{price\}|\d+(?:\.\d+)?", "#", text)

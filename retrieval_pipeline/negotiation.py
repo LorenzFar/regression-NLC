@@ -9,7 +9,7 @@ from copy import deepcopy
 from dataclasses import replace
 from decimal import ROUND_DOWN, Decimal
 
-from .contracts import ContractError, PolicyDecision
+from .contracts import ContractError, OfferContext, PolicyDecision
 from .generator import RetrievalGenerator
 from .pipeline import GateDecision, Pipeline, Transition
 
@@ -149,7 +149,8 @@ class OfferTracker:
             # Offers stay untouched; only remember what we asked about, so a
             # "yes" on the next turn can confirm that reading.
             act, _ = top_act(observation)
-            state[PENDING] = {"act": act, "price": decision.price}
+            state[PENDING] = {"act": act, "price": decision.price,
+                              "reason": decision.clarification_reason}
             return Transition(state, False)
         state.pop(PENDING, None)
         state.setdefault("offers", [])
@@ -161,6 +162,19 @@ class OfferTracker:
 
 
 AFFIRMATION = re.compile(r"^\W*(yes|yeah|yep|yup|correct|right|exactly|that'?s right|indeed|sure)\b", re.I)
+# "the earlier offer", "the other price": the seller points away from the live
+# offer without naming a price, so no single offer in history is identified.
+OTHER_OFFER = re.compile(r"\b(?:the|that) (?:earlier|previous|other|original|first|old) (?:offer|price|one)\b", re.I)
+EXPLICIT_ACCEPTANCE = re.compile(
+    r"\s*I accept your offer(?: (?:of|at|for) \$?\d+(?:\.\d{1,2})?)?[.!]?\s*", re.I,
+)
+
+
+def _points_to_other_offer(observation) -> bool:
+    """True when the seller refers to a non-current offer and wrote no price of their own."""
+    reference = observation.price_reference
+    written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+    return not written and bool(OTHER_OFFER.search(observation.message))
 
 
 class ClarificationFollowUp:
@@ -175,6 +189,29 @@ class ClarificationFollowUp:
     provenance = "rules:clarification-follow-up"
 
     def resolve(self, snapshot, observation):
+        # A whole, unconditional acceptance sentence may correct a wrong NLU
+        # label, but only the existing resolver and tracker can authorize its offer.
+        if EXPLICIT_ACCEPTANCE.fullmatch(observation.message):
+            from price_reference.observer import ReferenceObserver
+
+            listing = snapshot.state.get("listing_price")
+            reference = ReferenceObserver(listing_price=None if listing is None else Decimal(str(listing))).observe(
+                snapshot, observation.case_id, observation.message, act="accept")
+            target = acceptance_target(snapshot.state, reference)
+            if (target is not None and target["by"] == "buyer"
+                    and reference.get("offer_actionable") is True
+                    and not reference.get("conditions")
+                    and not reference.get("state_history_disagreement")):
+                probabilities = {act: 1.0 if act == "accept" else 0.0
+                                 for act in observation.probabilities}
+                return replace(observation, probabilities=probabilities,
+                               price_reference={**reference, "reason": "explicit_acceptance"})
+        if observation.price_reference.get("reason") in {"seller_alternatives", "firm_alternatives", "self_collection", "firm_price"}:
+            act, _ = top_act(observation)
+            if act not in OFFER_ACTS:
+                probabilities = {act: 1.0 if act == "counter" else 0.0
+                                 for act in observation.probabilities}
+                return replace(observation, probabilities=probabilities)
         pending = snapshot.state.get(PENDING)
         if not pending or pending.get("price") is None:
             return observation
@@ -184,6 +221,15 @@ class ClarificationFollowUp:
         # resolver borrowed from an earlier offer ("ok" -> our 200) is not.
         reference = observation.price_reference
         written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+        if pending.get("reason") in {"conditional_price", "collection_day"}:
+            # A new conditional offer still needs its own clarification.
+            if _conditional_price(reference) is not None:
+                return observation
+            if not written and re.match(r"^\W*(no|nope|nah)\b", observation.message, re.I):
+                return replace(observation, price_reference={
+                    "price": None, "reference_resolved": True, "status": "resolved",
+                    "reason": "collection_day_declined" if pending["reason"] == "collection_day" else "condition_declined",
+                })
         restated = written and Decimal(reference["price"]) == Decimal(pending["price"])
         if (written and not restated) or not (affirmed or restated):
             return observation
@@ -268,12 +314,21 @@ class ConfidenceGate:
         if self.mode != "off" and (
             reference.get("reference_resolved") is False
             or (act in {"propose", "counter"} and reference.get("price") is None)
+            or _points_to_other_offer(observation)
         ):
             reasons.append("unresolved_reference")
         # "250 if you collect today": the buyer negotiates price only, so it asks.
-        if self.mode != "off" and _conditional_price(reference) is not None:
-            reasons.append("conditional_price")
+        if self.mode != "off" and (
+            _conditional_price(reference) is not None or reference.get("reason") in {"condition_declined", "collection_day_declined"}
+        ):
+            reasons.append("collection_day" if reference.get("reason") in {"collection_day", "collection_day_declined"} else "conditional_price")
         if self.mode == "full":
+            if (act == "vague" and reference.get("price") is None
+                    and reference.get("reference_resolved") is not False
+                    and not reference.get("referenced_offer_id")
+                    and reference.get("reason") not in {"condition_declined", "collection_day_declined"}
+                    and not _points_to_other_offer(observation)):
+                reasons.append("unclear_message")
             if _state_conflict(snapshot.state, act, reference):
                 reasons.append("state_conflict")
             if probability < self.threshold:
@@ -340,12 +395,38 @@ class RulePolicy:
         return min(walk_away, price)
 
     def decide(self, snapshot, observation, gate):
+        """Choose terms and hand known offers to the generator without text parsing."""
+        decision = self._decide(snapshot, observation, gate)
+        previous = _last_price(snapshot.state, "buyer")
+        act, _ = top_act(observation)
+        reference = observation.price_reference
+        seller = (_seller_price(observation) if act in OFFER_ACTS
+                  and reference.get("reference_resolved") is True and not gate.reasons else None)
+        return replace(decision, offer_context=OfferContext(
+            previous_buyer_price=None if previous is None else str(previous),
+            current_seller_price=None if seller is None else str(seller),
+        ))
+
+    def _decide(self, snapshot, observation, gate):
         state = snapshot.state
         if gate.reasons:
+            if "collection_day" in gate.reasons:
+                price = _conditional_price(observation.price_reference)
+                return PolicyDecision("clarify", None if price is None else str(_money(price)),
+                                      None if price is None else next_offer_id(state, "seller"),
+                                      clarification_reason="collection_day")
+            if observation.price_reference.get("reason") == "condition_declined":
+                return PolicyDecision("clarify", clarification_reason="conditional_price")
             conditional = _conditional_price(observation.price_reference)
             if "conditional_price" in gate.reasons and conditional is not None:
                 return PolicyDecision("clarify", str(_money(conditional)), next_offer_id(state, "seller"),
                                       clarification_reason="conditional_price")
+            # "The earlier offer" names neither the live offer nor the price the
+            # resolver borrowed for it, so ask which offer instead of guessing.
+            if _points_to_other_offer(observation):
+                return PolicyDecision("clarify", clarification_reason=gate.reasons[0])
+            if "unclear_message" in gate.reasons:
+                return PolicyDecision("clarify", clarification_reason="unclear_message")
             seller = _seller_price(observation)
             # Ask about the price the seller just named, if any.
             if seller is not None:

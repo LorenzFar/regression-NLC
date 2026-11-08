@@ -86,7 +86,7 @@ def test_clarification_leaves_state_unchanged():
     assert moves(results) == [("clarify", "95.00")]
     # Offers are untouched; the tracker only notes what was asked about.
     pending = snapshot.state.pop("pending_clarification")
-    assert pending == {"act": "accept", "price": "95.00"}
+    assert pending == {"act": "accept", "price": "95.00", "reason": "low_confidence"}
     assert snapshot.state == state and not snapshot.finished
 
 
@@ -334,7 +334,8 @@ def test_firm_price_above_walk_away_is_rejected_once_there_is_no_room_left():
 @pytest.mark.parametrize("act", ["inquire", "vague"])
 def test_buyer_does_not_concede_to_a_question_or_vague_message(act):
     results, _ = talk(say("propose", "120"), say(act), say(act))
-    assert moves(results) == [("counter", "80.00")] * 3
+    follow_up = ("clarify", None) if act == "vague" else ("counter", "80.00")
+    assert moves(results) == [("counter", "80.00"), follow_up, follow_up]
 
 
 def test_seller_rejection_without_a_price_earns_one_concession_step():
@@ -344,7 +345,7 @@ def test_seller_rejection_without_a_price_earns_one_concession_step():
 
 def test_buyer_opens_at_target_when_no_seller_price_exists():
     assert moves(talk(say("inquire"))[0]) == [("propose", "80.00")]
-    assert moves(talk(say("vague"), say("inquire"))[0]) == [("propose", "80.00"), ("propose", "80.00")]
+    assert moves(talk(say("vague"), say("inquire"))[0]) == [("clarify", None), ("propose", "80.00")]
 
 
 def test_restated_offer_never_exceeds_the_seller_price_on_record():
@@ -354,9 +355,9 @@ def test_restated_offer_never_exceeds_the_seller_price_on_record():
 
 def test_question_after_acceptance_keeps_the_deal_and_it_can_still_close():
     results, snapshot = talk(say("propose", "70"), say("inquire"), say("vague"), say("accept"))
-    assert moves(results) == [("accept", "70.00"), ("accept", "70.00"), ("accept", "70.00"),
+    assert moves(results) == [("accept", "70.00"), ("accept", "70.00"), ("clarify", None),
                               ("confirm", "70.00")]
-    assert [result.trace["policy"]["referenced_offer_id"] for result in results] == ["seller-1"] * 4
+    assert [result.trace["policy"]["referenced_offer_id"] for result in results] == ["seller-1", "seller-1", None, "seller-1"]
     assert [item["id"] for item in snapshot.state["offers"]] == ["seller-1"]
     assert snapshot.state["agreement"] == "confirmed" and snapshot.finished
 
