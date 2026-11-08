@@ -161,6 +161,16 @@ class OfferTracker:
 
 
 AFFIRMATION = re.compile(r"^\W*(yes|yeah|yep|yup|correct|right|exactly|that'?s right|indeed|sure)\b", re.I)
+# "the earlier offer", "the other price": the seller points away from the live
+# offer without naming a price, so no single offer in history is identified.
+OTHER_OFFER = re.compile(r"\b(?:the|that) (?:earlier|previous|other|original|first|old) (?:offer|price|one)\b", re.I)
+
+
+def _points_to_other_offer(observation) -> bool:
+    """True when the seller refers to a non-current offer and wrote no price of their own."""
+    reference = observation.price_reference
+    written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+    return not written and bool(OTHER_OFFER.search(observation.message))
 
 
 class ClarificationFollowUp:
@@ -268,6 +278,7 @@ class ConfidenceGate:
         if self.mode != "off" and (
             reference.get("reference_resolved") is False
             or (act in {"propose", "counter"} and reference.get("price") is None)
+            or _points_to_other_offer(observation)
         ):
             reasons.append("unresolved_reference")
         # "250 if you collect today": the buyer negotiates price only, so it asks.
@@ -346,6 +357,10 @@ class RulePolicy:
             if "conditional_price" in gate.reasons and conditional is not None:
                 return PolicyDecision("clarify", str(_money(conditional)), next_offer_id(state, "seller"),
                                       clarification_reason="conditional_price")
+            # "The earlier offer" names neither the live offer nor the price the
+            # resolver borrowed for it, so ask which offer instead of guessing.
+            if _points_to_other_offer(observation):
+                return PolicyDecision("clarify", clarification_reason=gate.reasons[0])
             seller = _seller_price(observation)
             # Ask about the price the seller just named, if any.
             if seller is not None:

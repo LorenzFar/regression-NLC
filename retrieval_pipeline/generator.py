@@ -53,12 +53,17 @@ class RetrievalGenerator:
                 "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
-                "conditional_price": "Could you clarify whether {price} depends on that condition?",
+                "conditional_price": "Is {price} still your price without that condition?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
             kind = "generic" if reference is None else "specific"
             text = generic[reason] if reference is None else specific[reason].format(price=_display(decision.price))
+            # Tracker ids are "<owner>-<n>". A conflict about our own offer means the
+            # seller's words do not match it, so say so instead of asking for "status".
+            if reason == "state_conflict" and reference is not None and reference.startswith("buyer-"):
+                text = ("That doesn't match my current offer. "
+                        f"Are you referring to my offer of {_display(decision.price)}?")
             return GenerationResult(
                 text=text, action=decision.action, price=decision.price,
                 template_id=f"fixed.clarify.{reason}.{kind}", source="clarification",
