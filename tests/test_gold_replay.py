@@ -34,6 +34,7 @@ def acceptance_case():
 
 def test_gold_history_restores_live_buyer_offer_and_gate_changes_only_current_turn():
     row = acceptance_case()
+    row["message"] = "Okay, deal."  # Exercise NLU confidence, not explicit-acceptance correction.
     records = replay_gold([row], FakeNLU(), bank=BANK)
     assert all(record["error"] is None for record in records)
     off, reference, full = records
@@ -54,6 +55,7 @@ def test_gold_history_restores_live_buyer_offer_and_gate_changes_only_current_tu
 
 def test_records_score_with_existing_evaluator_without_translation():
     row = acceptance_case()
+    row["message"] = "Okay, deal."  # Keep the low-confidence clarification case.
     original = deepcopy(row)
     records = replay_gold([row], FakeNLU(), bank=BANK)
     report = gate_report(records, {row["case_id"]: row})
