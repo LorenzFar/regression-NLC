@@ -31,7 +31,7 @@ REVISION = re.compile(r"\b(?:oops|i meant|i ment|correction)\b", re.I)
 _BREAK = re.compile(r"[!?;,]|\.(?=\s|$)|\b(?:but|however|whereas)\b", re.I)
 CLARIFICATION = re.compile(
     r"\b(?:could|can|would) you clarify\b|\bwhat (?:do )?you mean\b|"
-    r"\b(?:are you|which offer are you) referring to\b|\bdid you say\b|\bis that\s+\$?\d", re.I)
+    r"\b(?:are you|which offer are you) referring to\b|\bare you asking for\b|\bdid you say\b|\bis that\s+\$?\d", re.I)
 NEW_PROPOSAL = re.compile(
     r"\b(?:how about|what about|(?:would|will|could|can|do) you (?:take|accept|consider|do|go)|"
     r"i (?:(?:can|could|will|would) )?(?:offer|do|go|pay|take|accept)|i['’]ll (?:do|go|pay|take|accept)|my offer is|is my max(?:imum)?)\b", re.I)

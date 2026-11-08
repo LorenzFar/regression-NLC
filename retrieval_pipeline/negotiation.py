@@ -149,6 +149,8 @@ class OfferTracker:
             # Offers stay untouched; only remember what we asked about, so a
             # "yes" on the next turn can confirm that reading.
             act, _ = top_act(observation)
+            if decision.clarification_reason == "price_mismatch":
+                act = "counter"  # Candidate seller price, not acceptance of our offer.
             state[PENDING] = {"act": act, "price": decision.price,
                               "reason": decision.clarification_reason}
             return Transition(state, False)
@@ -221,6 +223,15 @@ class ClarificationFollowUp:
         # resolver borrowed from an earlier offer ("ok" -> our 200) is not.
         reference = observation.price_reference
         written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+        if pending.get("reason") == "price_mismatch":
+            # Disputed extracted prices must not be mistaken for a bare yes/no.
+            if _conditional_price(reference) is not None or (reference.get("candidates") and not written):
+                return observation
+            if not written and re.match(r"^\W*(no|nope|nah)\b", observation.message, re.I):
+                return replace(observation, price_reference={
+                    "price": None, "reference_resolved": True, "status": "resolved",
+                    "reason": "price_mismatch_declined",
+                })
         if pending.get("reason") in {"conditional_price", "collection_day"}:
             # A new conditional offer still needs its own clarification.
             if _conditional_price(reference) is not None:
@@ -323,10 +334,13 @@ class ConfidenceGate:
         ):
             reasons.append("collection_day" if reference.get("reason") in {"collection_day", "collection_day_declined"} else "conditional_price")
         if self.mode == "full":
+            if (_mismatched_price(reference) is not None
+                    or reference.get("reason") == "price_mismatch_declined"):
+                reasons.append("price_mismatch")
             if (act == "vague" and reference.get("price") is None
                     and reference.get("reference_resolved") is not False
                     and not reference.get("referenced_offer_id")
-                    and reference.get("reason") not in {"condition_declined", "collection_day_declined"}
+                    and reference.get("reason") not in {"condition_declined", "collection_day_declined", "price_mismatch_declined"}
                     and not _points_to_other_offer(observation)):
                 reasons.append("unclear_message")
             if _state_conflict(snapshot.state, act, reference):
@@ -334,6 +348,16 @@ class ConfidenceGate:
             if probability < self.threshold:
                 reasons.append("low_confidence")
         return GateDecision(self.mode, tuple(reasons), self.threshold)
+
+
+def _mismatched_price(reference) -> str | None:
+    """One unconditional extracted amount that conflicts with an acceptance."""
+    candidates = reference.get("candidates") or []
+    if reference.get("reason") == "price_mismatch" and len(candidates) == 1:
+        candidate = candidates[0]
+        if candidate.get("role") == "primary" and not candidate.get("condition"):
+            return candidate.get("price")
+    return None
 
 
 def _conditional_price(reference) -> str | None:
@@ -410,6 +434,11 @@ class RulePolicy:
     def _decide(self, snapshot, observation, gate):
         state = snapshot.state
         if gate.reasons:
+            if "price_mismatch" in gate.reasons:
+                price = _mismatched_price(observation.price_reference)
+                return PolicyDecision("clarify", price,
+                                      None if price is None else next_offer_id(state, "seller"),
+                                      clarification_reason="price_mismatch")
             if "collection_day" in gate.reasons:
                 price = _conditional_price(observation.price_reference)
                 return PolicyDecision("clarify", None if price is None else str(_money(price)),
