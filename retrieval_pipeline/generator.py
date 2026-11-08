@@ -107,11 +107,13 @@ class RetrievalGenerator:
         template_id = f"fixed.{decision.action}"
         if decision.action == "counter" and not opening:
             for suffix, wording in (
+                ("", templates["counter"]),
                 ("agreement", "Could we agree on {price}?"),
                 ("workable", "Would {price} work for you?"),
             ):
                 if _shape(wording) not in said:
-                    template, template_id = wording, f"fixed.counter.{suffix}"
+                    template = wording
+                    template_id = f"fixed.counter.{suffix}" if suffix else "fixed.counter"
                     break
         return GenerationResult(
             text=greeting + template.format(price=_display(decision.price)),
