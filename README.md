@@ -52,7 +52,7 @@ Use the **City road bike** preset (listed 300; buyer target 240, walk-away 280),
 | *(start a new negotiation)* | Hi! I saw your listing. Would you be willing to take 240? | The buyer moves first, at its target. Ledger: seller-1 300 (listing), buyer-2 240 |
 | `That's too low. This bike is pretty new. How about 265?` | That seems a little pricey. Would you be willing to accept 252? | Counter halfway from 240 to 265, rounded down to whole dollars. The wording is a real CraigslistBargain buyer line |
 | `That's way too low, 265 still` | yeah i could do 265, that sounds great! | The seller repeated 265, which is within walk-away, so the policy treats it as final and accepts |
-| `250 if you can collect today` | Is 250 still your price without that condition? | The resolver finds a price tied to a condition; the buyer only negotiates price, so the gate asks |
+| `250 if you can collect today` | Would you accept 250 without that condition? | The resolver finds a price tied to a condition; the buyer only negotiates price, so the gate asks |
 | `No, I would want 250` | Great then 250 it is then. | A plain 250 is cheaper than the 265 already accepted, so it accepts |
 | `ok` | Ok thanks, We'll do 250. | Confirmed, deal banner, input locked |
 
@@ -62,7 +62,7 @@ Clarification (start a new negotiation for each row group):
 |---|---|---|
 | `Deal!` | Okay I can do 240 thanks. | Confirms the opening offer, because there is exactly one live offer |
 | `I can do 270.` then `yes` | Are you referring to the offer of 270? → How about 255? | The NLU reads "I can do 270" as accepting a price that is not on the table, so it asks. "yes" confirms 270 and the buyer counters it |
-| `270 if you can collect today` then `yes, 270 either way` | Is 270 still your price without that condition? → How about 255? | Restating the price it asked about counts as an answer |
+| `270 if you can collect today` then `yes, 270 either way` | Would you accept 270 without that condition? → How about 255? | Restating the price it asked about counts as an answer |
 
 RQ2 in one exchange: start one negotiation with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
 

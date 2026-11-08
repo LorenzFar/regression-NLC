@@ -149,7 +149,8 @@ class OfferTracker:
             # Offers stay untouched; only remember what we asked about, so a
             # "yes" on the next turn can confirm that reading.
             act, _ = top_act(observation)
-            state[PENDING] = {"act": act, "price": decision.price}
+            state[PENDING] = {"act": act, "price": decision.price,
+                              "reason": decision.clarification_reason}
             return Transition(state, False)
         state.pop(PENDING, None)
         state.setdefault("offers", [])
@@ -194,6 +195,15 @@ class ClarificationFollowUp:
         # resolver borrowed from an earlier offer ("ok" -> our 200) is not.
         reference = observation.price_reference
         written = reference.get("price") is not None and reference.get("price_source") != "referenced_offer"
+        if pending.get("reason") == "conditional_price":
+            # A new conditional offer still needs its own clarification.
+            if _conditional_price(reference) is not None:
+                return observation
+            if not written and re.match(r"^\W*(no|nope|nah)\b", observation.message, re.I):
+                return replace(observation, price_reference={
+                    "price": None, "reference_resolved": True, "status": "resolved",
+                    "reason": "condition_declined",
+                })
         restated = written and Decimal(reference["price"]) == Decimal(pending["price"])
         if (written and not restated) or not (affirmed or restated):
             return observation
@@ -282,7 +292,9 @@ class ConfidenceGate:
         ):
             reasons.append("unresolved_reference")
         # "250 if you collect today": the buyer negotiates price only, so it asks.
-        if self.mode != "off" and _conditional_price(reference) is not None:
+        if self.mode != "off" and (
+            _conditional_price(reference) is not None or reference.get("reason") == "condition_declined"
+        ):
             reasons.append("conditional_price")
         if self.mode == "full":
             if _state_conflict(snapshot.state, act, reference):
@@ -353,6 +365,8 @@ class RulePolicy:
     def decide(self, snapshot, observation, gate):
         state = snapshot.state
         if gate.reasons:
+            if observation.price_reference.get("reason") == "condition_declined":
+                return PolicyDecision("clarify", clarification_reason="conditional_price")
             conditional = _conditional_price(observation.price_reference)
             if "conditional_price" in gate.reasons and conditional is not None:
                 return PolicyDecision("clarify", str(_money(conditional)), next_offer_id(state, "seller"),

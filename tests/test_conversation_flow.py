@@ -89,7 +89,7 @@ def test_conditional_price_gets_a_question_about_that_price():
     pipeline.open(live, context="City road bike")
     result = pipeline.turn(live, "250 if you can collect today", case_id="c")
     assert "conditional_price" in result.trace["gate"]["reasons"]
-    assert result.generation.text == "Is 250 still your price without that condition?"
+    assert result.generation.text == "Would you accept 250 without that condition?"
 
 
 def test_a_new_price_after_a_clarification_is_read_normally():

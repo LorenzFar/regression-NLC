@@ -47,13 +47,13 @@ class RetrievalGenerator:
                 "low_confidence": "Could you clarify what you mean?",
                 "unresolved_reference": "Which offer are you referring to?",
                 "state_conflict": "Could you clarify the current status of our negotiation?",
-                "conditional_price": "Could you clarify whether your price depends on a condition?",
+                "conditional_price": "What price would you accept without that condition?",
             }
             specific = {
                 "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
-                "conditional_price": "Is {price} still your price without that condition?",
+                "conditional_price": "Would you accept {price} without that condition?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
