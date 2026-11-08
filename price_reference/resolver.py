@@ -81,6 +81,61 @@ def _delta(text, mention, ledger, speaker):
                       reason="zero_price" if value == 0 else None)
 
 
+def _self_collection_offer(message, mentions):
+    """Narrow demo wording only; amounts and candidate roles come from the extractor."""
+    if len(mentions) not in {1, 2} or any(m.kind != "absolute" or m.start is None for m in mentions):
+        return None
+    choices = tuple(candidate(message, m) for m in mentions)
+    shape = message
+    for mention in reversed(mentions):
+        shape = shape[:mention.start] + "{price}" + shape[mention.end:]
+    if len(mentions) == 2:
+        # Select the collection branch by meaning, never by the cheapest number.
+        if not re.fullmatch(r"\s*\{price\} if you collect,? or \{price\} delivered[.!]?\s*", shape, re.I):
+            return None
+        if choices[0].role != "conditional" or choices[0].condition.lower() != "if you collect":
+            return None
+        chosen, reason = choices[0], "self_collection"
+    else:
+        if re.fullmatch(r"\s*\{price\} if you (?:can )?collect today[.!]?\s*", shape, re.I):
+            chosen = choices[0]
+            return Resolution("resolved", chosen.price, "explicit", source_span=chosen.span,
+                              candidates=choices, conditions=conditions(message), reason="collection_day")
+        collection = re.fullmatch(r"\s*\{price\} for (?:self[- ]collection|collection)(,? final price)?[.!]?\s*", shape, re.I)
+        plain = re.fullmatch(r"\s*\{price\} if you collect[.!]?\s*", shape, re.I)
+        firm = re.fullmatch(r"\s*(?:My final price is \{price\}|I can only take \{price\}|\{price\},? (?:final price|firm))[.!]?\s*", shape, re.I)
+        if not (collection or plain or firm):
+            return None
+        chosen = choices[0]
+        reason = "firm_price" if firm or collection and collection[1] else "self_collection"
+    # The exact collection condition is satisfied by the demo's fixed purchase method.
+    # Keep provenance spans, but do not leave a discharged condition actionable downstream.
+    supported = tuple(PriceCandidate(c.price, c.span, "primary" if c == chosen else "alternative") for c in choices)
+    return Resolution("resolved", chosen.price, "explicit", source_span=chosen.span,
+                      candidates=supported, reason=reason)
+
+
+def _seller_alternatives(message, mentions):
+    """Only two plain, unconditional seller prices; use extractor spans, not a new parser."""
+    if len(mentions) != 2 or any(m.kind != "absolute" or m.start is None for m in mentions):
+        return None
+    choices = tuple(candidate(message, m) for m in mentions)
+    if conditions(message) or any(c.condition or c.role == "conditional" for c in choices):
+        return None
+    first, second = mentions
+    if first.end > second.start:
+        return None
+    shape = (message[:first.start] + "{price}" + message[first.end:second.start]
+             + "{price}" + message[second.end:])
+    plain = re.fullmatch(r"\s*I can take \{price\} or \{price\}[.!]?\s*", shape, re.I)
+    firm = re.fullmatch(r"\s*(?:My final price is|I can only take) \{price\} or \{price\}[.!]?\s*", shape, re.I)
+    if not (plain or firm):
+        return None
+    chosen = min(choices, key=lambda c: Decimal(c.price))
+    return Resolution("resolved", chosen.price, "explicit", source_span=chosen.span,
+                      candidates=choices, reason="firm_alternatives" if firm else "seller_alternatives")
+
+
 def resolve(message: str, *, speaker: str = "seller", act: str | None,
             mentions: list[ResolverMention] | tuple[ResolverMention, ...],
             ledger: OfferLedger) -> Resolution:
@@ -99,6 +154,10 @@ def resolve(message: str, *, speaker: str = "seller", act: str | None,
     clean = [m for m in mentions if not demotion(message, m, speaker)]
     dropped = [demotion(message, m, speaker) for m in mentions if demotion(message, m, speaker)]
     pointer = bool(POINTER.search(message))
+    if speaker == "seller" and len(clean) == len(mentions):
+        alternatives = _self_collection_offer(message, clean) or _seller_alternatives(message, clean)
+        if alternatives is not None:
+            return alternatives
     if not clean and any(reason in {"withdrawn", "superseded"} for reason in dropped):
         return Resolution("no_price", reason="withdrawn_price")
     if not clean and re.search(
@@ -151,7 +210,9 @@ def resolve(message: str, *, speaker: str = "seller", act: str | None,
                 return _problem("act_unknown")
             return _delta(message, mention, ledger, speaker)
         chosen = candidate(message, mention)
-        attached = conditions(message, mention)
+        attached = conditions(message, mention) or conditions(message)
+        if attached and chosen.role != "conditional":
+            chosen = PriceCandidate(chosen.price, chosen.span, "conditional", attached[0])
         return Resolution("resolved", mention.value, "explicit", source_span=chosen.span,
                           candidates=(chosen,), conditions=attached,
                           reason="conditional_price" if attached else None,

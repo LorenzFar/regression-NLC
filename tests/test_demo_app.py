@@ -109,5 +109,5 @@ def test_clarification_counterfactual_never_mutates_live_state():
         assert 'low_confidence' in turn['gate']['reasons']
         assert turn['counterfactual']['action'] == 'counter'
         after = app.sessions[session_id][0].snapshot().state
-        assert after.pop('pending_clarification') == {'act': 'counter', 'price': '300.00'}
+        assert after.pop('pending_clarification') == {'act': 'counter', 'price': '300.00', 'reason': 'low_confidence'}
         assert after == before.state

@@ -1,5 +1,5 @@
 """Buyer response generation and pipeline contracts."""
-from .contracts import ContractError, GenerationResult, PolicyDecision, Turn
+from .contracts import ContractError, GenerationResult, OfferContext, PolicyDecision, Turn
 from .generator import RetrievalGenerator
 
-__all__ = ["ContractError", "GenerationResult", "PolicyDecision", "Turn", "RetrievalGenerator"]
+__all__ = ["ContractError", "GenerationResult", "OfferContext", "PolicyDecision", "Turn", "RetrievalGenerator"]

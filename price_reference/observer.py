@@ -50,12 +50,11 @@ class ReferenceObserver:
     def __init__(self, nlu=None, listing_price=None):
         self.nlu, self.listing_price = nlu, listing_price
 
-    def observe(self, snapshot, case_id, message):
+    def observe(self, snapshot, case_id, message, *, act=None):
         listing = self.listing_price if self.listing_price is not None else snapshot.state.get("listing_price")
         ledger = build_ledger(snapshot.history, snapshot.state, listing)
         mentions = collect_mentions(message, listing)
-        act = None
-        if self.nlu is not None:
+        if act is None and self.nlu is not None:
             history = [(speaker.upper(), text) for speaker, text in map(_turn, snapshot.history)]
             act = act_from_probabilities(self.nlu.predict(history, message))
         result = resolve(message, speaker="seller", act=act, mentions=mentions, ledger=ledger)

@@ -1,37 +1,25 @@
 # Buyer negotiation agent
 
-A buyer chatbot for CS425 that negotiates price with a human seller. You play the seller; the bot is the buyer. It makes the first offer, reads each of your messages, decides what to do with simple rules, and replies using sentences written by real buyers in the CraigslistBargain dataset. When it isn't sure what you meant, it asks instead of guessing.
+A local chatbot for CS425 that negotiates prices. You play the seller, and the bot plays the buyer. It starts with an offer, responds to your prices, and asks questions when an offer is unclear.
 
-**Working end to end:** checkpoint NLU (Farrell), price extraction and reference resolution (Edric, `price_reference/`), rule-based tracker, gate and policy (Ercong, Weijie, `retrieval_pipeline/negotiation.py`), and retrieval generation from a 546-template CraigslistBargain bank (Jiong). `retrieval_pipeline/agent.py` connects them; the web demo and the RQ2 replay both use it. Gold-set results are still pending (see Remaining work).
+The project combines a trained NLU model, price and offer-reference rules, a negotiation policy, and a bank of buyer replies from CraigslistBargain. It runs locally without an LLM API.
 
 ## How it works
 
-Every seller message goes through six steps:
+1. **Read the message:** predict whether the seller is making an offer, accepting, rejecting, asking a question, or being vague.
+2. **Resolve the price:** extract amounts and identify which offer the seller means.
+3. **Check whether to ask:** ask for clarification when confidence is low, an offer is unclear, or a price has a condition.
+4. **Choose a response:** use price rules to counter, accept, reject, or confirm a deal.
+5. **Write the reply:** select a matching response template and insert the chosen price.
+6. **Update the conversation:** record offers and whether a deal has been confirmed.
 
-| Step | Owner | What it does | Example |
-|---|---|---|---|
-| 1. Understand | Farrell | DistilBERT labels the message as propose, counter, accept, reject, inquire or vague, using the last few turns as context | "Lowest I'd go is 270" → counter (95%) |
-| 2. Find the price | Edric | Extracts the price, resolves "same as before", and flags prices with conditions | "250 if you collect today" → 250, conditional |
-| 3. Decide whether to ask | Weijie | The clarification gate asks when the NLU is under 70% sure, a reference or condition is unclear, or the message conflicts with the offers | 51% sure → "Could you clarify…?" |
-| 4. Decide what to do | Weijie | Rules with a target and walk-away price choose accept, counter or reject, and the price | Seller 265, bot offered 240 → counter 252 |
-| 5. Write the reply | Jiong | Picks the real buyer sentence that best fits the conversation and inserts the policy's price | "That seems a little pricey. Would you be willing to accept 252?" |
-| 6. Remember the deal | Ercong | Tracks every offer and whether a deal is agreed; confirms only when it's clear which offer was accepted | seller 300, buyer 240, seller 265 … |
-
-The wording only fills in the price the rules chose, so it can never change the terms of the deal.
-
-## How we evaluate it
-
-| Question | How | Status |
-|---|---|---|
-| RQ1: does the NLU do better with earlier messages? | Rule parser vs NLU without history vs NLU with 1–3 turns, macro-F1 on the hand-labelled gold set, 3 seeds | Needs gold set and extra checkpoints |
-| RQ2: does asking stop wrong deal confirmations without too many extra questions? | Same seller turns with the gate off / reference only / full (`retrieval_pipeline/gold_replay.py` → `evaluation/gate_eval.py`) | Runs end to end; needs gold set. On 12 authored practice cases: off 2 wrong confirmations, full 0 with 6 questions |
-| Price finding | Exact-match price and correct-reference rate (`evaluation/price_extractor`, `evaluation/resolver`) | In repo |
-| Reply wording | 489 held-out real buyer turns: overlap with the real reply, variety, price kept (`scripts/evaluate_generator.py`) | Retrieval 0.216 vs fixed sentences 0.205 overlap; variety 0.249 vs 0.011; price kept 100% |
-| Rules | Tests: never above walk-away, price unchanged, correct deal state | Passing |
+The policy chooses the action and price. Retrieval chooses the wording. Purchase method is fixed to **self-collection**; collection dates are not scheduled. Narrow collection-price patterns are supported, not general delivery or scheduling language. “Final” prices still use the normal negotiation rules, not automatic acceptance.
 
 ## Chatbot demo
 
-You play the seller; the bot is the buyer and opens with an offer at its target price. Each buyer reply shows the NLU probabilities, extracted price, gate decision, policy action, the corpus sentence the wording came from, the offer ledger, and what the bot would have said with the gate off.
+Follow [Setup and run](#setup-and-run) first if this is a new checkout. Then start the server below. Restart it after code changes and begin a new negotiation.
+
+You type as the seller. Click a buyer reply to see the predicted intent, price, clarification decision, buyer action, selected template, and recorded offers.
 
 ```powershell
 $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
@@ -41,59 +29,106 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 `--scripted-nlu` swaps in a keyword stand-in (labelled in the header) when torch or the checkpoint is unavailable. `--bank PATH` picks another response bank.
 
-### Things to try (presentation walkthrough)
+### Demo conversations
 
-You play the seller and type your own replies; the buttons under the chat are only examples. Click any buyer message to see, step by step, why it said that.
+Use the **City road bike** preset: listing **300**, target **240**, walk-away **280**, concession fraction **0.5**, gate **Full**, confidence threshold **0.7**. Start a **new negotiation for each row**. The buyer opens at 240. Send each numbered seller message separately, waiting for the reply before the next one.
 
-Use the **City road bike** preset (listed 300; buyer target 240, walk-away 280), gate **Full**, τ 0.7, concession fraction 0.5. Every reply below was produced by the real checkpoint.
+These conversations were checked through the live frontend with `models/nlu_k2_s0.pt` and the current response bank. Check the **action and price** in the diagnostics: retrieved wording can sound like agreement even when the action is `counter`.
 
-| You type (seller) | Buyer replies | What to point out |
+#### Price negotiation
+
+| Scenario | Seller messages, in order | Expected buyer actions |
 |---|---|---|
-| *(start a new negotiation)* | Hi! I saw your listing. Would you be willing to take 240? | The buyer moves first, at its target. Ledger: seller-1 300 (listing), buyer-2 240 |
-| `That's too low. This bike is pretty new. How about 265?` | That seems a little pricey. Would you be willing to accept 252? | Counter halfway from 240 to 265, rounded down to whole dollars. The wording is a real CraigslistBargain buyer line |
-| `That's way too low, 265 still` | yeah i could do 265, that sounds great! | The seller repeated 265, which is within walk-away, so the policy treats it as final and accepts |
-| `250 if you can collect today` | Would you accept 250 without that condition? | The resolver finds a price tied to a condition; the buyer only negotiates price, so the gate asks |
-| `No, I would want 250` | Great then 250 it is then. | A plain 250 is cheaper than the 265 already accepted, so it accepts |
-| `ok` | Ok thanks, We'll do 250. | Confirmed, deal banner, input locked |
+| Accept the opening offer | 1. `Deal!` | Confirm 240 and end the conversation. |
+| Offer a lower price | 1. `I am asking 230.`<br>2. `Okay, deal.` | Accept 230 → confirm 230. |
+| Raise the offer gradually | 1. `I am asking 300.`<br>2. `I could do 290.`<br>3. `Okay, deal.` | Counter 270 → counter 280 → confirm 280. |
+| Reach the buyer's maximum | 1. `I am asking 400.`<br>2. `I am asking 350.` | Counter 280 → reject the higher price. Rejection does not close the chat. |
+| Repeat a price within the maximum | 1. `I am asking 270.`<br>2. `I am asking 270.`<br>3. `Okay, deal.` | Counter 255 → accept 270 → confirm 270. |
+| Accept a small remaining gap | 1. `I am asking 270.`<br>2. `I am asking 275.`<br>3. `Okay, deal.` | Counter 255 → accept 275 → confirm 275. After its first counter, the next calculated offer is close enough to 275. |
 
-Clarification (start a new negotiation for each row group):
+#### Clarify which offer is meant
 
-| You type | Buyer replies | What to point out |
+| Scenario | Seller messages, in order | Expected buyer response |
 |---|---|---|
-| `Deal!` | Okay I can do 240 thanks. | Confirms the opening offer, because there is exactly one live offer |
-| `I can do 270.` then `yes` | Are you referring to the offer of 270? → How about 255? | The NLU reads "I can do 270" as accepting a price that is not on the table, so it asks. "yes" confirms 270 and the buyer counters it |
-| `270 if you can collect today` then `yes, 270 either way` | Would you accept 270 without that condition? → How about 255? | Restating the price it asked about counts as an answer |
+| General clarification | 1. `Maybe.` | “Could you clarify what you mean?” No offer changes. |
+| Explicit acceptance | 1. `I accept your offer.` | Confirm 240 and end the conversation. |
+| Refer to an earlier offer | 1. `I could do 270.`<br>2. `Actually, let’s go with the earlier offer.`<br>3. `I mean 240.` | Counter 255 → “Which offer are you referring to?” → accept 240. |
+| Refer to another price | 1. `I agree to the other price`<br>2. `I mean 240.` | Ask which offer → accept 240. |
+| Name a different price while agreeing | 1. `Deal at 300`<br>2. `yes` | “That doesn't match my current offer. Are you referring to my offer of 240?” → confirm 240. Here, `yes` agrees to the question about **240**, not 300. |
+| Answer a question about the seller's price | 1. `I can do 280.`<br>2. `ok`<br>3. `ok` | Ask whether the seller means 280 → counter 260 → confirm 260. The first `ok` answers the question; the second accepts the counteroffer. |
 
-RQ2 in one exchange: start one negotiation with gate **Full** and one with gate **Off**, and type `I can do 280.` then `ok` in both.
+Clarification leaves the recorded offers unchanged. `Maybe.` asks “Could you clarify what you mean?” in Full mode. `I accept your offer.` confirms a matching live buyer offer. After the buyer **accepts** a seller price, `Okay, deal.` can be used to confirm it.
 
-| Gate | After `I can do 280.` | After `ok` |
+#### Self-collection and conditional prices
+
+| Scenario | Seller message | Expected buyer action |
 |---|---|---|
-| Off | That seems a little pricey. Would you be willing to accept 240? | Ok, 240 it is. → deal at 240, which the seller never agreed to |
-| Full | Are you referring to the offer of 280? | How about 260? (280 is now on record); a further `ok` confirms 260 |
+| Collection or delivery | `260 if you collect, or 270 delivered` | Use collection price 260 → counter 250. |
+| Collection costs more | `290 if you collect, or 270 delivered` | Use collection price 290 → counter 265. Do not choose the delivery price. |
+| Two available prices | `I can take 260 or 270` | Use 260 → counter 250. |
+| Two final prices | `My final price is 260 or 270` | Use 260 → counter 250. |
+| Final collection price | `260 for collection, final price` | Counter 250. “Final” does not force acceptance. |
+| Repeat a final price | Send `My final price is 270` twice | Counter 255 → accept 270 under the repeated-price rule. |
+
+These exact forms are supported. Other ways of giving multiple prices may still need clarification.
+
+The bot negotiates price only. It does not promise a collection time.
+
+| Scenario | Seller messages, in order | Expected buyer response |
+|---|---|---|
+| Remove the condition | 1. `250 if you can collect today`<br>2. `yes` | “Would you accept 250 if I collect on another day?” → counter 245. `yes` makes 250 available for another-day collection; it does not automatically complete a deal. |
+| Keep the condition, then name another price | 1. `250 if you can collect today`<br>2. `no`<br>3. `I can do 260.` | Ask about another day → “What price would you accept for self-collection on another day?” → counter 250. No collection date is promised. |
+| Give a new price immediately | 1. `250 if you can collect today`<br>2. `No, I can do 260.` | Ask about another day → counter 250 using the new seller price of 260. |
+| Repeat the conditional offer | 1. `250 if you can collect today`<br>2. `250 if you collect today` | Ask about another day again. It does not treat the repeated price as unconditional. |
+
+#### Compare the gate on and off
+
+Start two fresh conversations and send `I can do 280.` followed by `ok` in each.
+
+| Gate | Observed result |
+|---|---|
+| **Full** | Asks about 280, then counters at 260. Another `ok` confirms 260. |
+| **Off** | Counters at 240 again, then confirms 240. It loses the seller's intended price of 280. |
+
+#### Current limits to try
+
+These examples show gaps, rather than features to present as working reliably. Start a fresh conversation for each row.
+
+| Seller message | Current behaviour |
+|---|---|
+| `I could do 260 or 270.` | Asks about the buyer's 240 instead of asking which seller price is intended. `I mean 260.` recovers with a counter at 250. |
+| `Can you increase your offer?` | Repeats a counter at 240; it does not increase without a new seller price. |
+| `No.` | Counters at 270 using the listing price of 300. A bare rejection does not end the chat. |
+
+Some bank replies contain personal stories, budget claims, or agreement wording that does not fit the chosen action. Price and state checks do not guarantee appropriate wording. Collection times, delivery arrangements, and general questions about the item are outside the current demo's scope.
 
 ### Settings explained
 
-- **Buyer target:** the buyer's opening offer and the price it hopes for.
-- **Walk-away:** the most it will ever pay. It never offers above this and rejects once it has reached it and the seller still wants more.
-- **Concession fraction:** each counter moves this share of the way from the buyer's last offer to the seller's latest price (0.5 = halfway). Counters are rounded down to whole dollars. The buyer accepts when the seller is at or below its next counter, when the seller repeats a price within walk-away, or, after it has countered at least once, when the gap left is at most 5% of the seller's price.
-- **Clarification gate:** decides whether to ask instead of acting. *Full* asks when the NLU's confidence is below τ, when a reference ("same as before") or a conditional price is unresolved, or when the message conflicts with the offers on the table. *Reference only* asks only about references and conditions. *Off* never asks (the RQ2 baseline).
-- **Confidence threshold τ:** the gate asks when the NLU's top probability is below τ. Propose and counter are added together, since both mean "the seller named a price".
+- **Target:** the buyer's opening price.
+- **Walk-away:** the highest price the buyer will pay.
+- **Concession fraction:** how far each counter moves toward the seller's price. At 0.5, it moves halfway. The demo rounds down to whole dollars and caps the result at walk-away.
+- **Gate mode:** **Full** checks confidence, offer references, conditions, and conflicting offers. **Reference only** skips the confidence and state-conflict checks. **Off** skips clarification.
+- **Confidence threshold:** how sure the model must be before acting; the default is 0.7. The probabilities for propose and counter are added because both describe an offer.
 
-## What the integration added
+The buyer may accept a repeated seller price within its maximum. After at least one counteroffer, it may also accept a price within its maximum when:
 
-| Area | Change | Where |
-|---|---|---|
-| Integration | All team branches merged; one factory builds NLU → price/reference → gate → policy → generator → tracker | `retrieval_pipeline/agent.py` |
-| Response bank | 546 buyer templates from CraigslistBargain train dialogues, labelled by the He et al. rule parser, 10% of dialogues held out | `scripts/build_craigslist_bank.py`, `examples/craigslist_bank.jsonl` |
-| Generator | Accept and confirm share wording; no repeated templates within a conversation; whole prices print as `80`; opening line with greeting | `retrieval_pipeline/generator.py` |
-| Buyer opens | Buyer offers its target first; listing price recorded as the seller's asking offer | `Pipeline.open`, `RulePolicy.opening`, `OfferTracker.open` |
-| Policy | After at least one counter, accept a seller price within walk-away when the gap to the next counter is ≤ 5% (`close_gap`); demo counters in whole dollars (`whole_dollars`) | `RulePolicy` |
-| Gate | Confidence for offers = P(propose) + P(counter) | `offer_confidence`, `ConfidenceGate` |
-| Clarification | Ask about the seller's named price; conditional prices ("250 if you collect today") get their own question; the buyer remembers the asked price, and a following "yes", "ok" or restated price confirms it | `ClarificationFollowUp`, `pending_clarification`, `conditional_price` |
-| Evaluation | Generator comparison on held-out turns; full-pipeline RQ2 replay for the gold set | `scripts/evaluate_generator.py`, `retrieval_pipeline/gold_replay.py` |
-| Demo | Local chat UI: equal-height scrolling panels, step-by-step explanation of each reply, gate-off comparison, `?say=msg1\|msg2` replays a scripted conversation | `demo_app/` |
+```text
+seller's price − buyer's next calculated offer ≤ 5% × seller's price
+```
 
-Design details for the negotiation changes: `docs/negotiation.md` → Integration changes.
+Accepting a seller offer and confirming a deal are separate actions. A rejection declines the offer; it does not necessarily end the conversation.
+
+## Project files
+
+- `demo_app/`: local web chat and turn-by-turn diagnostics.
+- `retrieval_pipeline/`: connects the components, chooses buyer actions, tracks offers, and generates replies.
+- `price_reference/`: extracts prices and resolves offer references.
+- `nlu.py`: loads the trained model and predicts seller intent.
+- `examples/`: response banks and sample conversations.
+- `evaluation/` and `scripts/`: data preparation, replay, and evaluation tools.
+- `tests/`: automated checks.
+
+See [negotiation details](docs/negotiation.md) for the policy and state tracker.
 
 ## Setup and run
 
@@ -167,10 +202,11 @@ print(result.text)
 | `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, or `clarify` |
 | `price` | Nonnegative SGD decimal string, at most two decimal places. Required for propose/counter/accept/confirm. Never rounded. |
 | `referenced_offer_id` | Nonblank offer ID for accept/confirm. Upstream validates ownership and whether the offer remains valid. |
-| `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, or `state_conflict`. Offer-specific clarification needs both offer ID and price. |
+| `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, `state_conflict`, `conditional_price`, `collection_day`, or `unclear_message`. Offer-specific clarification needs both offer ID and price. |
 | `finished` | Supplied by policy; the tracker transition decides whether the session ends. |
+| `offer_context` | Optional `OfferContext` containing the previous buyer price and the current resolved seller price. Used to check increase and midpoint wording. |
 
-Retrieval filters by action, then ranks preceding contexts with TF-IDF/cosine similarity. Context numbers are masked; response text is not. Positive-score ties use template ID. Only the authorized price fills the template. Clarification uses fixed wording. A valid request without a match gets a same-action fallback; invalid requests raise `ContractError`.
+Retrieval filters by action, then ranks preceding contexts with TF-IDF/cosine similarity. Context numbers are masked; response text is not. Positive-score ties use template ID. Only the authorized price fills the template. Increase and midpoint wording use the recorded buyer offer and the resolved seller price, rather than parsing conversation text again. Without this context, those templates are skipped; other templates remain available. Clarification uses fixed wording. A valid request without a match gets a same-action fallback; invalid requests raise `ContractError`.
 
 Results include `text`, `action`, `price`, `template_id`, `source`, `similarity`, `fallback_reason`, and provenance (`origin`, `source_dialogue_id`, `source_turn_id`). `source` is `retrieval`, `fallback`, or `clarification`; retrieval does not imply corpus origin.
 
@@ -230,16 +266,16 @@ A buyer message that directly answers a seller message becomes a template when t
 
 Generator behaviour: retrieval ranks same-action templates by TF-IDF similarity of the last two turns plus the seller message; accept and confirm share wording; templates the buyer already used in the conversation are skipped; the buyer's opening adds "Hi! I saw your listing." and skips templates that react to a seller turn ("Ok.", "Sounds great!"); whole prices print as `80`, not `80.00` (the decision price is unchanged).
 
-Held-out results (489 buyer turns; every system gets the human buyer's action and price):
+Earlier generator results (489 held-out buyer turns; each system receives the recorded buyer action and price). These results predate the latest wording checks:
 
-| System | Token F1 vs human reply | Distinct-2 | Price kept |
+| System | Token F1 vs human reply | Distinct-2 | Numeric-price check |
 |---|---:|---:|---:|
 | Fixed fallback sentences | 0.205 | 0.011 | 100% |
 | Random template, same action | 0.207 | 0.280 | 100% |
 | TF-IDF retrieval (used) | 0.216 | 0.249 | 100% |
 | TF-IDF uni+bigram | 0.211 | 0.258 | 100% |
 
-Retrieval gives varied, human-sounding wording while always stating the policy's price. Word overlap with the human reply barely separates the systems, so context similarity adds little measurable gain on this metric; a small human rating would be the better test.
+The numeric-price check confirms that any price written in a reply matches the policy; it also permits replies with no price. Word overlap barely separates the systems. These scores do not measure persuasion or prove that every reply fits the conversation.
 
 ### Provisional corpus retrieval (local trial only)
 
@@ -300,11 +336,9 @@ RQ1 reports accuracy, macro-F1 with bootstrap CI, per-class F1, confusion matrix
 
 ## Remaining work
 
-| Owner | Needed |
-|---|---|
-| Barry | Hand-labelled gold set (with history act/price labels and listing prices) to run RQ1 and RQ2 for real |
-| Farrell | NLU training script and the k0/k1/k3 checkpoints over three seeds for RQ1 |
-| Jiong | Human check of the parser-labelled response bank (optional; the rule parser labels are the documented source) |
+- Run RQ1 and RQ2 on the hand-labelled evaluation set, with offer history and listing prices.
+- Add the remaining NLU context-window checkpoints and training seeds for RQ1.
+- Review response-bank wording for unsupported claims and replies that do not fit the chosen action.
 
 ## Domain language
 

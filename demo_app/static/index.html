@@ -271,6 +271,7 @@
         </div>
         <div class="composer">
           <div id="finished" hidden></div>
+          <p class="note"><strong>Purchase method: self-collection</strong></p>
           <p class="note">Reply as the seller in your own words. The buttons are only examples.</p>
           <div id="examples"></div>
           <form id="form">
@@ -477,11 +478,19 @@
         if (r.opening) {
           steps.push(step(1, "Understanding", "Buyer speaks first: nothing to read yet",
             node("div", "The buyer opens at its target price, so the NLU, price reader and gate have no seller message to look at.")));
-        } else if (r.trace && r.trace.follow_up_applied) {
+        } else if (r.trace && r.trace.follow_up_applied && ["condition_declined", "collection_day_declined"].includes(ref.reason)) {
+          steps.push(step(1, "Understanding (follow-up)", "Seller kept the condition",
+            node("div", "The seller kept the condition. The buyer asks for a suitable price; no price or collection day was confirmed.")));
+          steps.push(step(2, "Price and reference", "Asking for a suitable price", kv([["Note", ref.reason]])));
+          steps.push(step(3, "Clarification gate", reasons.length ? "Asks: " + reasons.join(", ") : "Passed, no question needed",
+            kv([["Mode", r.gate.mode], ["Reasons", reasons.join(", ") || "none"]]),
+            { warn: reasons.length > 0, open: reasons.length > 0 }));
+        } else if (r.trace && r.trace.follow_up_applied && ref.reason === "confirmed_after_clarification") {
           steps.push(step(1, "Understanding (follow-up)", "Read as a yes to the buyer's question",
             node("div", "The last buyer turn asked about a price and this reply affirmed it, so the pipeline takes that price at full confidence instead of re-reading the message.")));
           steps.push(step(2, "Price and reference", "Confirmed price: " + money(ref.price), kv([["Price", money(ref.price)], ["Note", ref.reason]])));
-          steps.push(step(3, "Clarification gate", "Passed, the question was answered", kv([["Mode", r.gate.mode], ["Reasons", "none"]])));
+          steps.push(step(3, "Clarification gate", reasons.length ? "Asks: " + reasons.join(", ") : "Passed, the question was answered",
+            kv([["Mode", r.gate.mode], ["Reasons", reasons.join(", ") || "none"]])));
         } else {
           steps.push(step(1, "Understanding (NLU)", `Seller act: ${top} (${Math.round((probs[top] || 0) * 100)}%)`, bars(probs, tau)));
           const conditional = (ref.candidates || []).find((c) => c.role === "conditional");

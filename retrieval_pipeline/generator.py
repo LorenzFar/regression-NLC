@@ -40,20 +40,25 @@ class RetrievalGenerator:
         identity/ownership is an upstream reference/tracker responsibility.
         opening=True means the buyer speaks first and message is the listing:
         a greeting is added and offers that react to a seller turn are skipped.
+        Comparative wording needs decision.offer_context from upstream; callers
+        omitting it can still retrieve ordinary wording without reparsing text.
         """
         validate_generation_request(decision, history, message)
         if decision.action == "clarify":
             generic = {
                 "low_confidence": "Could you clarify what you mean?",
+                "unclear_message": "Could you clarify what you mean?",
                 "unresolved_reference": "Which offer are you referring to?",
                 "state_conflict": "Could you clarify the current status of our negotiation?",
                 "conditional_price": "What price would you accept without that condition?",
+                "collection_day": "What price would you accept for self-collection on another day?",
             }
             specific = {
                 "low_confidence": "Could you clarify whether you mean {price}?",
                 "unresolved_reference": "Are you referring to the offer of {price}?",
                 "state_conflict": "Could you clarify the status of the offer of {price}?",
                 "conditional_price": "Would you accept {price} without that condition?",
+                "collection_day": "Would you accept {price} if I collect on another day?",
             }
             reason = decision.clarification_reason
             reference = decision.referenced_offer_id
@@ -76,7 +81,7 @@ class RetrievalGenerator:
         compatible = [i for i, row in enumerate(self.bank)
                       if row["action"] in pool and _shape(row["template"]) not in said
                       and not (opening and not OFFER_START.match(row["template"]))
-                      and _context_eligible(row["template"], decision, history, message, opening)]
+                      and _context_eligible(row["template"], decision, opening)]
         greeting = "Hi! I saw your listing. " if opening else ""
         reason = "no_bank" if self.bank_path is None else "no_compatible_candidate"
         if compatible:
@@ -131,53 +136,34 @@ OFFER_START = re.compile(r"\W*(would|will|could|can|how about|what about|is|are|
                          r"i('d| would| could| can)? ?(like to )?(offer|do|pay))\b", re.I)
 
 
-# Parse evidence conservatively; ordinary bank wording is not an allowlist.
-OFFER_WORDING = (
-    r"(?:(?:would|will|could|can) you (?:be willing to )?(?:take|accept|do|consider)|"
-    r"how about|what about|could we (?:agree on|make it)|"
-    r"i (?:can|could|would like to) (?:offer(?: you)?|pay|do|give you)|"
-    r"i(?:'ll| will) (?:offer|pay|give you)) \{price\}"
-)
-PLAIN_OFFER = re.compile(
-    "(?:" + OFFER_WORDING.replace(r"\{price\}", r"(?P<price>[0-9]+(?:\.[0-9]{1,2})?)")
-    + r")[.?!]*", re.I,
-)
+# Detect comparative claims, not prices: offers come from the policy/tracker.
 INCREASE_WORDING = re.compile(
     r"\b(?:go(?:ing)? up|rais(?:e|ed|ing) my offer|increas(?:e|ed|ing) my offer)\b", re.I,
 )
 MIDPOINT_WORDING = re.compile(
     r"\b(?:half[ -]?way|split (?:the difference|difference|it at))\b", re.I,
 )
-BARE_OFFER = re.compile(r"\$?\s*(?P<price>[0-9]+(?:\.[0-9]{1,2})?)[.?!]*")
 
 
-def _offer_price(text):
-    """Only explicit plain offers or price-only turns count as evidence."""
-    text = text.strip().removeprefix("Hi! I saw your listing. ")
-    offer = PLAIN_OFFER.fullmatch(text) or BARE_OFFER.fullmatch(text)
-    return Decimal(offer["price"]) if offer else None
-
-
-def _context_eligible(template, decision, history, message, opening):
-    """Gate comparative claims only; never infer an offer from arbitrary numbers."""
+def _context_eligible(template, decision, opening):
+    """Gate comparative claims using structured offers, never dialogue parsing."""
     increase = INCREASE_WORDING.search(template)
     midpoint = MIDPOINT_WORDING.search(template)
     if not (increase or midpoint):
         return True
-    if opening or decision.price is None:
+    context = decision.offer_context
+    if (opening or decision.price is None or context is None
+            or context.previous_buyer_price is None):
         return False
-    # Do not search past an ambiguous latest buyer turn for a stale offer.
-    previous = next((turn.text for turn in reversed(history)
-                     if turn.speaker.lower() == "buyer"), "")
-    buyer = _offer_price(previous)
-    if buyer is None:
-        return False
+    buyer = Decimal(context.previous_buyer_price)
     price = Decimal(decision.price)
     if increase and price <= buyer:
         return False
     if midpoint:
-        seller = _offer_price(message)
-        if seller is None or price != (buyer + seller) / 2:
+        if context.current_seller_price is None:
+            return False
+        seller = Decimal(context.current_seller_price)
+        if price != (buyer + seller) / 2:
             return False
     return True
 
