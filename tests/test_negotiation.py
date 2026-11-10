@@ -441,10 +441,13 @@ def test_invariants_hold_for_any_sequence_of_seller_turns(seed, mode):
     session = Session("random")
     limit = float(walk_away)
     for message in script.turns:
+        before = session.snapshot().state
         result = pipeline.turn(session, message, case_id=message, turn_id=message)
         decision, snapshot = result.trace["policy"], session.snapshot()
         state = snapshot.state
-        if decision["action"] != "clarify":
+        if decision["action"] == "answer":
+            assert state == before
+        if decision["action"] not in {"clarify", "answer"}:
             lives = live(snapshot)
             assert len(lives) <= 1
             assert state["agreement"] in {"none", "pending", "confirmed"}
