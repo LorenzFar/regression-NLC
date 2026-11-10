@@ -145,6 +145,9 @@ class OfferTracker:
 
     def commit(self, snapshot, observation, gate, decision):
         state = deepcopy(snapshot.state)
+        if decision.action == "answer":
+            # Neither the seller observation nor the answer creates an offer.
+            return Transition(state, False)
         if decision.action == "clarify":
             # Offers stay untouched; only remember what we asked about, so a
             # "yes" on the next turn can confirm that reading.
@@ -467,6 +470,32 @@ class RulePolicy:
                                       clarification_reason=gate.reasons[0])
             return PolicyDecision("clarify", clarification_reason=gate.reasons[0])
         act, _ = top_act(observation)
+        if act == "inquire":
+            pending = _pending_offer(state)
+            price = _money(pending["terms"]["price"]) if pending else _last_price(state, "buyer")
+            message = observation.message.lower()
+            kind = "redirect"
+            if price is not None:
+                # Arrangement questions take precedence over interest/price words.
+                if re.search(r"\b(?:collect(?:ion)?|pick[ -]?up|deliver(?:y)?)\b", message):
+                    kind = "accepted_arrangement" if pending else "arrangement"
+                elif pending:
+                    kind = "accepted_offer"
+                elif re.search(
+                    r"\b(?:have we agreed|we agreed on what price|what price did we agree on)\b", message,
+                ):
+                    kind = "no_agreement"
+                elif re.search(
+                    r"\b(?:increase|raise)\b|"
+                    r"\b(?:go|pay|offer) (?:any )?(?:higher|more|up)\b|"
+                    r"\bwhy\b.*\b(?:low|offer|price)\b", message,
+                ):
+                    kind = "hold_price"
+                elif re.search(r"\b(?:interested|interest)\b|\b(?:still |do you )?want (?:it|this|the item)\b", message):
+                    kind = "interest"
+                elif re.search(r"\b(?:price|offer)\b|\bhow much\b", message):
+                    kind = "current_offer"
+            return PolicyDecision("answer", None if price is None else str(price), answer_type=kind)
         offer = acceptance_target(state, observation.price_reference) if act == "accept" else None
         if offer is not None:
             return PolicyDecision("confirm", offer["terms"]["price"], offer["id"], finished=True)

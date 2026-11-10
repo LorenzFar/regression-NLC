@@ -9,11 +9,11 @@ The project combines a trained NLU model, price and offer-reference rules, a neg
 1. **Read the message:** predict whether the seller is making an offer, accepting, rejecting, asking a question, or being vague.
 2. **Resolve the price:** extract amounts and identify which offer the seller means.
 3. **Check whether to ask:** ask for clarification when confidence is low, an offer is unclear, or a price has a condition.
-4. **Choose a response:** use price rules to counter, accept, reject, or confirm a deal.
-5. **Write the reply:** select a matching response template and insert the chosen price.
+4. **Choose a response:** use price rules to counter, accept, reject, or confirm a deal; answer seller inquiries that pass the gate.
+5. **Write the reply:** retrieve negotiation wording, or use a fixed clarification/inquiry template, and insert the policy-selected price.
 6. **Update the conversation:** record offers and whether a deal has been confirmed.
 
-The policy chooses the action and price. Retrieval chooses the wording. Purchase method is fixed to **self-collection**; collection dates are not scheduled. Narrow collection-price patterns are supported, not general delivery or scheduling language. “Final” prices still use the normal negotiation rules, not automatic acceptance.
+The policy chooses the action and price. Retrieval chooses negotiation wording. For seller `inquire` messages that pass the gate, policy selects a fixed answer type and the tracker’s current price. General price questions restate the offer; interest and increase questions do not concede. Collection/pickup/delivery questions redirect to price before interest handling. Agreement questions say there is no agreement yet, or restate the pending accepted seller price with “I’ve accepted …”, never the older buyer offer. Other questions redirect to the current price; without one, they ask what price the seller would accept. Answers do not change offers or agreement. Purchase method is fixed to **self-collection**; collection dates are not scheduled. Narrow collection-price patterns are supported, not general delivery or scheduling language. “Final” prices still use the normal negotiation rules, not automatic acceptance.
 
 ## Chatbot demo
 
@@ -23,7 +23,7 @@ You type as the seller. Click a buyer reply to see the predicted intent, price, 
 
 ```powershell
 $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
-.\.venv\Scripts\python.exe -m demo_app.server --port 8000
+.\.venv\Scripts\python.exe -m demo_app.server --checkpoint models/nlu_k3_s1.pt --port 8000
 # open http://127.0.0.1:8000
 ```
 
@@ -31,76 +31,82 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 ### Demo conversations
 
-Use the **City road bike** preset: listing **300**, target **240**, walk-away **280**, concession fraction **0.5**, gate **Full**, confidence threshold **0.7**. Start a **new negotiation for each row**. The buyer opens at 240. Send each numbered seller message separately, waiting for the reply before the next one.
+Use the **City road bike** preset: listing **300**, target **240**, walk-away **280**, concession fraction **0.5**, gate **Full**, confidence threshold **0.7**. Start a **new negotiation for each scenario**. The buyer opens at 240. Send each seller message separately and wait for the reply.
 
-These conversations were checked through the live frontend with `models/nlu_k2_s0.pt` and the current response bank; the updated different-price clarification below was rechecked directly through the same pipeline, not the frontend. Check the **action and price** in the diagnostics: retrieved wording can sound like agreement even when the action is `counter`.
+These sequences were checked directly through `DemoApp` with **`models/nlu_k3_s1.pt`**, using the same session setup as the frontend. They were not rechecked in the browser. Use the explicit checkpoint in the startup command above; different checkpoints or conversation wording can change NLU predictions. Check the **action and price** in diagnostics, since retrieved wording can sound like agreement even when the action is `counter`.
 
-#### Price negotiation
+#### 1. Negotiate, accept and remember the agreement
 
-| Scenario | Seller messages, in order | Expected buyer actions |
+| Seller message | Buyer action | Rule or state to show |
 |---|---|---|
-| Accept the opening offer | 1. `Deal!` | Confirm 240 and end the conversation. |
-| Offer a lower price | 1. `I am asking 230.`<br>2. `Okay, deal.` | Accept 230 → confirm 230. |
-| Raise the offer gradually | 1. `I am asking 300.`<br>2. `I could do 290.`<br>3. `Okay, deal.` | Counter 270 → counter 280 → confirm 280. |
-| Reach the buyer's maximum | 1. `I am asking 400.`<br>2. `I am asking 350.` | Counter 280 → reject the higher price. Rejection does not close the chat. |
-| Repeat a price within the maximum | 1. `I am asking 270.`<br>2. `I am asking 270.`<br>3. `Okay, deal.` | Counter 255 → accept 270 → confirm 270. |
-| Accept a small remaining gap | 1. `I am asking 270.`<br>2. `I am asking 275.`<br>3. `Okay, deal.` | Counter 255 → accept 275 → confirm 275. After its first counter, the next calculated offer is close enough to 275. |
+| `How about 270?` | Counter 255 | Move towards the seller's price. |
+| `I really need 270 for it.` | Accept 270 | Repeated seller price is within the maximum. Agreement becomes pending. |
+| `What price did we agree on?` | Answer using 270 | Remember the accepted price, not the earlier buyer offer of 255. Agreement stays pending. |
+| `Okay, deal.` | Confirm 270 | Agreement becomes confirmed and the session finishes. |
 
-#### Clarify which offer is meant
+Explain: the buyer negotiates first, accepts the repeated price within budget, and waits for confirmation. An inquiry adds to conversation history without changing offers or agreement.
 
-| Scenario | Seller messages, in order | Expected buyer response |
+#### 2. Clarify a price mismatch, then an unresolved reference
+
+Run all five messages in the same fresh negotiation. This complete sequence was checked with k3_s1 through `DemoApp`.
+
+| Seller message | Buyer response | Rule or state to show |
 |---|---|---|
-| General clarification | 1. `Maybe.` | “Could you clarify what you mean?” No offer changes. |
-| Explicit acceptance | 1. `I accept your offer.` | Confirm 240 and end the conversation. |
-| Refer to an earlier offer | 1. `I could do 270.`<br>2. `Actually, let’s go with the earlier offer.`<br>3. `I mean 240.` | Counter 255 → “Which offer are you referring to?” → accept 240. |
-| Refer to another price | 1. `I agree to the other price`<br>2. `I mean 240.` | Ask which offer → accept 240. |
-| Name a different price while agreeing | 1. `Deal at 300`<br>2. `yes` (or `no`) | “Are you asking for 300?” → `yes` sends seller price 300 through the normal price rules (counter 270); `no` asks “What price are you asking for?” Offers stay unchanged while clarifying. |
-| Answer a question about the seller's price | 1. `I can do 280.`<br>2. `ok`<br>3. `ok` | Ask whether the seller means 280 → counter 260 → confirm 260. The first `ok` answers the question; the second accepts the counteroffer. |
+| `I agree to 300.` | “Are you asking for 300?” | **Price mismatch:** 300 does not match the buyer's 240 offer. Offers stay unchanged. |
+| `yes` | Counter 270 | Treat 300 as the seller's asking price and resume negotiation. |
+| `I agree to the other price` | “Which offer are you referring to?” | **Unresolved reference:** do not guess what “the other price” means. Offers stay unchanged. |
+| `I mean 240.` | Accept 240 | Use the explicit seller price. Agreement becomes pending. |
+| `Okay, deal.` | Confirm 240 | Agreement becomes confirmed and the session finishes. |
 
-Clarification leaves the recorded offers unchanged. `Maybe.` asks “Could you clarify what you mean?” in Full mode. `I accept your offer.` confirms a matching live buyer offer. After the buyer **accepts** a seller price, `Okay, deal.` can be used to confirm it.
+Explain: first the gate checks a stated price that conflicts with the current offer. Later it asks which price an ambiguous reference means. Both clarifications preserve offers and agreement; explicit follow-ups let negotiation continue. The `I mean 240.` turn is handled as a seller price that the buyer accepts, not as automatic confirmation of an old offer.
 
-#### Self-collection and conditional prices
+Use this exact wording: with k3_s1, `Deal at 300` was recognised as a counterproposal and countered at 270 without clarification.
 
-| Scenario | Seller message | Expected buyer action |
+For a shorter general-clarification example, start fresh: `That could work.` → “Could you clarify what you mean?”; then `I accept your offer.` → confirm 240.
+
+#### 3. Reach the maximum and reject
+
+| Seller message | Buyer action | Rule or state to show |
 |---|---|---|
-| Collection or delivery | `260 if you collect, or 270 delivered` | Use collection price 260 → counter 250. |
-| Collection costs more | `290 if you collect, or 270 delivered` | Use collection price 290 → counter 265. Do not choose the delivery price. |
-| Two available prices | `I can take 260 or 270` | Use 260 → counter 250. |
-| Two final prices | `My final price is 260 or 270` | Use 260 → counter 250. |
-| Final collection price | `260 for collection, final price` | Counter 250. “Final” does not force acceptance. |
-| Repeat a final price | Send `My final price is 270` twice | Counter 255 → accept 270 under the repeated-price rule. |
+| `I am asking 300.` | Counter 270 | Make a concession. |
+| `Sorry, 300 is the lowest I can go.` | Counter 280 | Cap the offer at the buyer's maximum. |
+| `No, I still need 300.` | Reject: “Can't do it.” | Seller still wants more than the maximum. |
 
-These exact forms are supported. Other ways of giving multiple prices may still need clarification.
+Explain: repetition and “lowest” wording do not force acceptance above budget. Rejection declines the price; it does **not** finish the session or create an agreement.
 
-The bot negotiates price only. It does not promise a collection time.
+#### 4. Accept a small remaining gap (optional)
 
-| Scenario | Seller messages, in order | Expected buyer response |
+| Seller message | Buyer action | Rule or state to show |
 |---|---|---|
-| Remove the condition | 1. `250 if you can collect today`<br>2. `yes` | “Would you accept 250 if I collect on another day?” → counter 245. `yes` makes 250 available for another-day collection; it does not automatically complete a deal. |
-| Keep the condition, then name another price | 1. `250 if you can collect today`<br>2. `no`<br>3. `I can do 260.` | Ask about another day → “What price would you accept for self-collection on another day?” → counter 250. No collection date is promised. |
-| Give a new price immediately | 1. `250 if you can collect today`<br>2. `No, I can do 260.` | Ask about another day → counter 250 using the new seller price of 260. |
-| Repeat the conditional offer | 1. `250 if you can collect today`<br>2. `250 if you collect today` | Ask about another day again. It does not treat the repeated price as unconditional. |
+| `How about 280?` | Counter 260 | Make the first counteroffer. |
+| `Would you do 270?` | Accept 270 | The next calculated counter is within 5% of the seller's price, and 270 is within the maximum. |
+| `Okay, deal.` | Confirm 270 | Finish the agreement. |
 
-#### Compare the gate on and off
+The gap rule compares the seller's price with the **next calculated buyer offer**, not the last published offer. This sequence lowers the seller price, so it demonstrates the gap rule separately from repeated-price acceptance.
 
-Start two fresh conversations and send `I can do 280.` followed by `ok` in each.
+#### Additional inquiry and confirmation examples
 
-| Gate | Observed result |
+Start a fresh negotiation for each row.
+
+| Seller messages, in order | Observed buyer behaviour |
 |---|---|
-| **Full** | Asks about 280, then counters at 260. Another `ok` confirms 260. |
-| **Off** | Counters at 240 again, then confirms 240. It loses the seller's intended price of 280. |
+| `I accept 240.` | Confirm 240 immediately. |
+| `What price would you like?` | Answer: “My current offer is 240.” |
+| `What price would work for you?` | Answer: “My current offer is 240.” |
+| `What price did we agree on?` → `I accept your offer.` | Say no agreement yet and restate 240 → confirm 240. |
+| `How about 270?` → `What is your current offer?` → `I accept your offer.` | Counter 255 → answer 255 without changing state → confirm 255. |
+| `Can you collect today?` | Explain that the bot negotiates price, not collection or delivery arrangements; restate 240. |
+| `What is your name?` | Redirect to price and restate 240. |
 
-#### Current limits to try
+For a short presentation, use scenarios **1 → 2 → 3** and keep scenario 4 as backup. Show the offer and agreement state before and after the inquiry in scenario 1.
 
-These examples show gaps, rather than features to present as working reliably. Start a fresh conversation for each row.
+#### Scope and current limits
 
-| Seller message | Current behaviour |
-|---|---|
-| `I could do 260 or 270.` | Asks about the buyer's 240 instead of asking which seller price is intended. `I mean 260.` recovers with a counter at 250. |
-| `Can you increase your offer?` | Repeats a counter at 240; it does not increase without a new seller price. |
-| `No.` | Counters at 270 using the listing price of 300. A bare rejection does not end the chat. |
-
-Some bank replies contain personal stories, budget claims, or agreement wording that does not fit the chosen action. Price and state checks do not guarantee appropriate wording. Collection times, delivery arrangements, and general questions about the item are outside the current demo's scope.
+- Inquiry answers use fixed templates selected by simple policy patterns, not corpus similarity or an LLM. They run only after the NLU predicts `inquire` and the gate passes.
+- NLU mistakes can still cause clarification. `Are you interested in pickup?` was labelled `vague`. After pending acceptance plus an inquiry, `I accept your offer.` was also labelled `vague` in a checked conversation; the sequence above uses `Okay, deal.` instead.
+- Some retrieved replies include unsupported personal stories, budget claims or units such as `/mo`. Price and state checks do not guarantee appropriate wording; inspect action and price separately.
+- Purchase method is self-collection. Narrow collection-price alternatives and conditional-price clarification exist, but the bot does not schedule collection or promise delivery. These are outside the main demo sequences above.
+- Gate-off comparisons checked with older checkpoints are not assumed to reproduce under k3_s1; rehearse them separately before presenting them.
 
 ### Settings explained
 
@@ -149,7 +155,7 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt -e ".[test,
 
 NLU follows the team's requirements: `torch>=2.14` and `transformers>=5.19`. Linux/macOS uses `.venv/bin/python`. Run examples from the checkout; they are not installed command-line tools.
 
-For real NLU, copy the team's `nlu_k2_s0.pt` to `models/`. Its SHA-256 is `41758d4d44553f6d83af6589c788de4dc7eacadd16bf28907f87909e0d416e36`. Load only trusted checkpoints. First loading needs the DistilBERT config/tokenizer from Hugging Face; later runs can use its cache. `--model-name PATH` accepts a compatible local config/tokenizer directory.
+For the demo above, copy the team's `nlu_k3_s1.pt` to `models/` and select it explicitly with `--checkpoint`. Checkpoints are not tracked in Git; changing the file or checkpoint setting requires restarting the server. The standalone/replay examples below retain `nlu_k2_s0.pt` and require that checkpoint separately. Load only trusted checkpoints. First loading needs the DistilBERT config/tokenizer from Hugging Face; later runs can use its cache. `--model-name PATH` accepts a compatible local config/tokenizer directory.
 
 ```powershell
 .\.venv\Scripts\python.exe -m examples.standalone_contract --checkpoint models/nlu_k2_s0.pt --output artifacts/standalone-demo.jsonl
@@ -199,14 +205,15 @@ print(result.text)
 
 | Decision field | Rule |
 |---|---|
-| `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, or `clarify` |
+| `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, `clarify`, or `answer` |
 | `price` | Nonnegative SGD decimal string, at most two decimal places. Required for propose/counter/accept/confirm. Never rounded. |
 | `referenced_offer_id` | Nonblank offer ID for accept/confirm. Upstream validates ownership and whether the offer remains valid. |
 | `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, `state_conflict`, `conditional_price`, `collection_day`, `price_mismatch`, or `unclear_message`. Offer-specific clarification needs both offer ID and price. |
 | `finished` | Supplied by policy; the tracker transition decides whether the session ends. |
+| `answer_type` | For answer: `current_offer`, `interest`, `hold_price`, `redirect`, `no_agreement`, `accepted_offer`, `arrangement`, or `accepted_arrangement`. Policy selects the type and current/accepted price; answers preserve tracker state. |
 | `offer_context` | Optional `OfferContext` containing the previous buyer price and the current resolved seller price. Used to check increase and midpoint wording. |
 
-Retrieval filters by action, then ranks preceding contexts with TF-IDF/cosine similarity. Context numbers are masked; response text is not. Positive-score ties use template ID. Only the authorized price fills the template. Increase and midpoint wording use the recorded buyer offer and the resolved seller price, rather than parsing conversation text again. Without this context, those templates are skipped; other templates remain available. Clarification uses fixed wording. A valid request without a match gets a same-action fallback; invalid requests raise `ContractError`.
+Retrieval filters by action, then ranks preceding contexts with TF-IDF/cosine similarity. Context numbers are masked; response text is not. Positive-score ties use template ID. Only the authorized price fills the template. Increase and midpoint wording use the recorded buyer offer and the resolved seller price, rather than parsing conversation text again. Without this context, those templates are skipped; other templates remain available. Clarification and inquiry answers use fixed wording; inquiry answers bypass corpus ranking. A valid request without a match gets a same-action fallback; invalid requests raise `ContractError`.
 
 Results include `text`, `action`, `price`, `template_id`, `source`, `similarity`, `fallback_reason`, and provenance (`origin`, `source_dialogue_id`, `source_turn_id`). `source` is `retrieval`, `fallback`, or `clarification`; retrieval does not imply corpus origin.
 
@@ -231,7 +238,7 @@ result = pipeline.turn(Session("conversation-1"), seller_message,
 | Tracker | `commit(snapshot, observation, gate, decision) -> Transition` |
 | Follow-up (optional) | `resolve(snapshot, observation) -> Observation`, runs before the gate |
 
-`pipeline.open(session, context=listing_text)` lets the buyer speak first: it calls `policy.opening(snapshot)` and `tracker.open(snapshot, decision)`, and the generator picks an opening line. A clarification may only add `pending_clarification` to the state; offers and agreement stay unchanged.
+`pipeline.open(session, context=listing_text)` lets the buyer speak first: it calls `policy.opening(snapshot)` and `tracker.open(snapshot, decision)`, and the generator picks an opening line. A clarification may only add `pending_clarification` to the state; offers and agreement stay unchanged. An `answer` preserves the entire tracker state and finished flag, while both messages are appended to history.
 
 NLU receives uppercase `(speaker, text)` history tuples. The gate gets full-precision probabilities. `Transition` contains a state dictionary and boolean `finished`. Collaborators compute from detached inputs; `commit` computes a proposed local transition, not an external database write.
 
