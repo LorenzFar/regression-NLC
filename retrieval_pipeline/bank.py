@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .contracts import ACTIONS as PUBLIC_ACTIONS, PRICE_ACTIONS, ContractError, Turn, validate_public_context
 
-ACTIONS = PUBLIC_ACTIONS - {"clarify"}
+ACTIONS = PUBLIC_ACTIONS - {"clarify", "answer"}
 # Deliberately conservative, not a semantic classifier or buyer-act mapper.
 UNSAFE = re.compile(
     r"\b(if|unless|provided|delivery|deliver|shipping|ship|pickup|collection|collect|"

@@ -109,6 +109,11 @@ def demotion(text, mention, speaker="seller"):
     cancelled = later_cancellation(text, mention)
     if cancelled:
         return cancelled
+    # Fixed answers restate an accepted seller price, not a new buyer offer.
+    if speaker.lower() == "buyer" and re.fullmatch(
+        r"\s*I['’]ve accepted \$?\d[\d,.]*\s*", local, re.I
+    ):
+        return "quoted_price"
     # This buyer question checks a seller's conditional price; it is not an offer.
     if speaker.lower() == "buyer" and re.fullmatch(
         r"\s*Would you accept \$?\d[\d,.]* (?:without that condition|if I collect on another day)\s*", local, re.I

@@ -9,11 +9,11 @@ The project combines a trained NLU model, price and offer-reference rules, a neg
 1. **Read the message:** predict whether the seller is making an offer, accepting, rejecting, asking a question, or being vague.
 2. **Resolve the price:** extract amounts and identify which offer the seller means.
 3. **Check whether to ask:** ask for clarification when confidence is low, an offer is unclear, or a price has a condition.
-4. **Choose a response:** use price rules to counter, accept, reject, or confirm a deal.
+4. **Choose a response:** use price rules to counter, accept, reject, or confirm a deal; answer seller inquiries that pass the gate.
 5. **Write the reply:** select a matching response template and insert the chosen price.
 6. **Update the conversation:** record offers and whether a deal has been confirmed.
 
-The policy chooses the action and price. Retrieval chooses the wording. Purchase method is fixed to **self-collection**; collection dates are not scheduled. Narrow collection-price patterns are supported, not general delivery or scheduling language. “Final” prices still use the normal negotiation rules, not automatic acceptance.
+The policy chooses the action and price. Retrieval chooses negotiation wording. For seller `inquire` messages that pass the gate, policy selects a fixed answer type and the tracker’s current price. General price questions restate the offer; interest and increase questions do not concede. Collection/pickup/delivery questions redirect to price before interest handling. Agreement questions say there is no agreement yet, or restate the pending accepted seller price with “I’ve accepted …”, never the older buyer offer. Other questions redirect to the current price; without one, they ask what price the seller would accept. Answers do not change offers or agreement. Purchase method is fixed to **self-collection**; collection dates are not scheduled. Narrow collection-price patterns are supported, not general delivery or scheduling language. “Final” prices still use the normal negotiation rules, not automatic acceptance.
 
 ## Chatbot demo
 
@@ -97,10 +97,12 @@ These examples show gaps, rather than features to present as working reliably. S
 | Seller message | Current behaviour |
 |---|---|
 | `I could do 260 or 270.` | Asks about the buyer's 240 instead of asking which seller price is intended. `I mean 260.` recovers with a counter at 250. |
-| `Can you increase your offer?` | Repeats a counter at 240; it does not increase without a new seller price. |
+| `Can you increase your offer?` | If labelled `inquire` and the gate passes: answers with the current offer and asks what price would work; no increase. |
 | `No.` | Counters at 270 using the listing price of 300. A bare rejection does not end the chat. |
 
 Some bank replies contain personal stories, budget claims, or agreement wording that does not fit the chosen action. Price and state checks do not guarantee appropriate wording. Collection times, delivery arrangements, and general questions about the item are outside the current demo's scope.
+
+Direct `k3_s1` smoke checks: `What price would you like?`, `What price would work for you?`, and `What price do you want?` restate 240. `Have we agreed?` says there is no agreement yet. After `I am asking 270.` twice, a price/agreement question answers “I’ve accepted 270”; `Deal.` or `Okay, deal.` can still confirm 270. `Are you interested in pickup?` is instead labelled `vague` and clarified. After pending acceptance plus an inquiry, `I accept your offer.` was also labelled `vague`; no inquiry keyword override bypasses the NLU or gate.
 
 ### Settings explained
 
@@ -199,11 +201,12 @@ print(result.text)
 
 | Decision field | Rule |
 |---|---|
-| `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, or `clarify` |
+| `action` | `propose`, `counter`, `accept`, `confirm`, `reject`, `clarify`, or `answer` |
 | `price` | Nonnegative SGD decimal string, at most two decimal places. Required for propose/counter/accept/confirm. Never rounded. |
 | `referenced_offer_id` | Nonblank offer ID for accept/confirm. Upstream validates ownership and whether the offer remains valid. |
 | `clarification_reason` | For clarify: `low_confidence`, `unresolved_reference`, `state_conflict`, `conditional_price`, `collection_day`, `price_mismatch`, or `unclear_message`. Offer-specific clarification needs both offer ID and price. |
 | `finished` | Supplied by policy; the tracker transition decides whether the session ends. |
+| `answer_type` | For answer: `current_offer`, `interest`, `hold_price`, `redirect`, `no_agreement`, `accepted_offer`, `arrangement`, or `accepted_arrangement`. Policy selects the type and current/accepted price; answers preserve tracker state. |
 | `offer_context` | Optional `OfferContext` containing the previous buyer price and the current resolved seller price. Used to check increase and midpoint wording. |
 
 Retrieval filters by action, then ranks preceding contexts with TF-IDF/cosine similarity. Context numbers are masked; response text is not. Positive-score ties use template ID. Only the authorized price fills the template. Increase and midpoint wording use the recorded buyer offer and the resolved seller price, rather than parsing conversation text again. Without this context, those templates are skipped; other templates remain available. Clarification uses fixed wording. A valid request without a match gets a same-action fallback; invalid requests raise `ContractError`.
