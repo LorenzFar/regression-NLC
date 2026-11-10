@@ -46,15 +46,21 @@ These sequences were checked directly through `DemoApp` with **`models/nlu_k3_s1
 
 Explain: the buyer negotiates first, accepts the repeated price within budget, and waits for confirmation. An inquiry adds to conversation history without changing offers or agreement.
 
-#### 2. Clarify a mismatched acceptance and recover
+#### 2. Clarify a price mismatch, then an unresolved reference
+
+Run all five messages in the same fresh negotiation. This complete sequence was checked with k3_s1 through `DemoApp`.
 
 | Seller message | Buyer response | Rule or state to show |
 |---|---|---|
-| `I agree to 300.` | “Are you asking for 300?” | The stated price does not match the buyer's 240 offer. Offers stay unchanged. |
-| `yes` | Counter 270 | Treat 300 as the seller's asking price and apply normal negotiation rules. |
-| `I accept your offer.` | Confirm 270 | Resolve “your offer” to the latest buyer offer and finish. |
+| `I agree to 300.` | “Are you asking for 300?” | **Price mismatch:** 300 does not match the buyer's 240 offer. Offers stay unchanged. |
+| `yes` | Counter 270 | Treat 300 as the seller's asking price and resume negotiation. |
+| `I agree to the other price` | “Which offer are you referring to?” | **Unresolved reference:** do not guess what “the other price” means. Offers stay unchanged. |
+| `I mean 240.` | Accept 240 | Use the explicit seller price. Agreement becomes pending. |
+| `Okay, deal.` | Confirm 240 | Agreement becomes confirmed and the session finishes. |
 
-Explain: an acceptance word alone is not enough; the system checks which price is being accepted. Use this exact wording: with k3_s1, `Deal at 300` was recognised as a counterproposal and countered at 270 without clarification.
+Explain: first the gate checks a stated price that conflicts with the current offer. Later it asks which price an ambiguous reference means. Both clarifications preserve offers and agreement; explicit follow-ups let negotiation continue. The `I mean 240.` turn is handled as a seller price that the buyer accepts, not as automatic confirmation of an old offer.
+
+Use this exact wording: with k3_s1, `Deal at 300` was recognised as a counterproposal and countered at 270 without clarification.
 
 For a shorter general-clarification example, start fresh: `That could work.` → “Could you clarify what you mean?”; then `I accept your offer.` → confirm 240.
 
