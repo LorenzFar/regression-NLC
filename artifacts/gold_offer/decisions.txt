@@ -1,0 +1,514 @@
+# split:dialogue:turn ;; price | multi | none ;; note      (AI-annotated; one price per message = the price the speaker puts forward)
+# --- validation
+validation:26:6 ;; 275.00
+validation:40:11 ;; none ;; buyer only quotes the listing and the seller's ask
+validation:52:5 ;; 550.00
+validation:66:1 ;; 20.00
+validation:66:3 ;; 15.00 ;; asking 24 restated, counter 15
+validation:75:6 ;; 190.00
+validation:76:3 ;; 2000.00
+validation:102:3 ;; 2750.00
+validation:108:1 ;; 4000.00
+validation:110:8 ;; 2250.00 ;; rent; 2500 is rent plus the pet deposit
+validation:124:7 ;; 11800.00
+validation:131:1 ;; 2000.00
+validation:132:7 ;; 1600.00
+validation:160:6 ;; 1200.00 ;; concession after 1000
+validation:170:1 ;; 550.00
+validation:172:2 ;; 90.00
+validation:186:5 ;; 20.00 ;; floor
+validation:196:6 ;; 1800.00
+validation:206:5 ;; 9.00
+validation:208:7 ;; none ;; buyer quotes the listing
+validation:221:1 ;; 90.00
+validation:222:3 ;; 349.00
+validation:238:1 ;; 4250.00
+validation:260:6 ;; 45.00
+validation:265:3 ;; 7.00
+validation:291:6 ;; 42.00
+validation:328:8 ;; 275.00
+validation:337:3 ;; multi ;; range 100-125
+validation:364:9 ;; 10.00
+validation:367:1 ;; 70.00
+validation:379:5 ;; 2700.00
+validation:431:5 ;; multi ;; two alternative offers
+validation:448:2 ;; 200.00
+validation:450:6 ;; 280.00
+validation:472:5 ;; 13500.00 ;; conditional on detailing and delivery
+validation:578:1 ;; 10995.00 ;; asking price restated
+# --- test
+test:72:5 ;; 575.00
+test:77:7 ;; 149.00
+test:164:4 ;; multi ;; range 100-150
+test:240:7 ;; multi ;; 50 or 55
+test:329:0 ;; multi ;; 140 plain, 160 with extras
+test:432:4 ;; 190.00
+test:504:9 ;; multi ;; unclear
+test:551:5 ;; multi ;; first year / second year
+test:571:12 ;; multi ;; first year / second year
+test:578:3 ;; multi ;; two unit types
+test:580:4 ;; 250.00
+test:594:3 ;; multi ;; two apartment types
+test:628:3 ;; 2100.00 ;; conditional on appliances
+test:710:7 ;; multi ;; two payment components
+# --- train 0-109
+train:3:4 ;; 400.00
+train:6:5 ;; 14000.00 ;; 6000 is a reduction amount
+train:25:5 ;; multi ;; range 1500-1600
+train:27:1 ;; 15.00
+train:30:8 ;; none ;; refuses 41, no counter
+train:30:10 ;; 50.00
+train:32:8 ;; 13000.00
+train:32:9 ;; 12500.00
+train:34:10 ;; 1300.00
+train:34:11 ;; 1350.00
+train:35:3 ;; 140.00
+train:37:6 ;; 150.00
+train:37:7 ;; 120.00
+train:40:3 ;; 25.00
+train:48:6 ;; 8900.00
+train:49:4 ;; 200.00
+train:52:6 ;; 76.00
+train:53:7 ;; 1525.00
+train:55:1 ;; 190.00
+train:60:6 ;; 170.00
+train:61:4 ;; 8300.00
+train:66:4 ;; 3200.00
+train:68:3 ;; 45.00
+train:68:7 ;; 50.00
+train:69:9 ;; 8.00
+train:70:9 ;; 250.00
+train:71:4 ;; 33.00
+train:79:4 ;; 1600.00
+train:79:5 ;; 950.00
+train:79:12 ;; 1400.00
+train:81:6 ;; multi ;; two options (1750 or 1900 furnished)
+train:88:7 ;; 280.00
+train:89:1 ;; 330.00
+train:91:4 ;; 3300.00
+train:91:5 ;; multi ;; unclear which of 3400 or 3500
+train:96:6 ;; 10900.00
+train:101:6 ;; 2500.00
+train:105:3 ;; 1900.00
+train:114:2 ;; 225.00
+train:121:3 ;; 750.00
+train:129:4 ;; 5.00
+train:129:5 ;; 8.00
+train:135:1 ;; 1190.00
+train:137:5 ;; 75.00
+train:141:3 ;; 130.00
+train:144:4 ;; 30.00
+train:144:5 ;; 24.00
+train:164:9 ;; 140.00
+train:165:10 ;; 400.00
+train:168:5 ;; none ;; pet deposit and monthly pet fee only
+train:168:7 ;; none ;; restates the buyer's request, no offer
+train:171:1 ;; 828.00
+train:171:3 ;; 850.00 ;; 20 is a reduction amount
+train:184:6 ;; 23.00
+train:195:9 ;; 40.00
+train:196:4 ;; 45.00
+train:207:14 ;; 1800.00 ;; 1500 is a deposit
+train:208:4 ;; 3400.00
+train:212:9 ;; multi ;; pickup 30 or delivery 35
+train:216:6 ;; 684.00
+train:219:3 ;; 35.00
+train:222:11 ;; 1300.00
+train:225:7 ;; 350.00
+train:227:5 ;; multi ;; 6 month 1800 or 1 year 1700
+train:237:4 ;; 60.00
+train:237:5 ;; 40.00
+train:244:9 ;; 99.00
+train:252:0 ;; 11000.00
+train:259:1 ;; 65.00
+train:270:11 ;; multi ;; range 38-40
+train:270:15 ;; 35.00
+train:277:1 ;; 75.00
+train:284:6 ;; 18.00 ;; per chair
+train:285:6 ;; 875.00
+train:285:8 ;; 800.00
+train:287:7 ;; 1368.00
+train:287:10 ;; 1550.00
+train:293:8 ;; 75.00
+train:293:12 ;; 75.00
+train:294:2 ;; 40.00
+train:298:5 ;; multi ;; 220 for the subs or 275 for both
+train:302:4 ;; 3200.00
+train:302:6 ;; 3250.00
+train:313:1 ;; multi ;; range 10-12
+train:325:1 ;; multi ;; range 90-100
+train:333:5 ;; multi ;; range 400-430
+train:334:8 ;; 660.00
+train:346:5 ;; 30.00
+train:353:7 ;; 270.00
+train:359:5 ;; 170.00
+train:372:3 ;; 160.00
+train:380:7 ;; 55.00
+train:380:8 ;; 50.00
+train:381:4 ;; 20.00
+train:386:1 ;; 3500.00
+train:386:2 ;; 2000.00
+train:387:2 ;; 120.00
+train:389:2 ;; multi ;; unclear between 450 and 420
+train:405:1 ;; 625.00
+train:420:6 ;; none ;; refuses, no offer
+train:425:5 ;; 2000.00
+train:437:7 ;; 6000.00
+train:442:3 ;; 5.00
+train:443:5 ;; 120.00
+train:445:2 ;; 850.00
+train:445:7 ;; 1300.00
+train:447:6 ;; 60.00
+train:447:7 ;; 60.00
+train:457:5 ;; 40.00
+train:458:7 ;; 290.00
+# --- train 110-224
+train:461:7 ;; 4750.00
+train:471:7 ;; 85.00
+train:472:7 ;; 22000.00
+train:475:4 ;; 600.00
+train:478:3 ;; 21000.00
+train:487:5 ;; 9800.00
+train:489:8 ;; 95.00
+train:491:3 ;; 2600.00
+train:492:2 ;; 3000.00
+train:494:1 ;; 6.00
+train:495:3 ;; 6300.00
+train:495:5 ;; multi ;; 6300 max 6400
+train:501:4 ;; 1500.00
+train:503:2 ;; 600.00
+train:503:5 ;; multi ;; 180 pickup today or 215 next week
+train:506:6 ;; 2000.00
+train:506:8 ;; 2300.00
+train:507:10 ;; 2287.50
+train:511:5 ;; 350.00
+train:516:10 ;; 1550.00 ;; 3100 is a deposit
+train:517:8 ;; 700.00
+train:519:4 ;; 5000.00
+train:528:6 ;; 210.00
+train:546:2 ;; multi ;; 2000 then 2200 in one message
+train:546:4 ;; 2500.00
+train:547:2 ;; 2200.00
+train:560:8 ;; multi ;; depends on the saddle
+train:562:4 ;; 450.00 ;; listing price restated
+train:564:2 ;; 266.00
+train:565:0 ;; 6000.00
+train:570:4 ;; 235.00
+train:573:4 ;; 200.00
+train:589:10 ;; 2700.00
+train:609:4 ;; 240.00
+train:610:2 ;; 100.00 ;; 25 each, 100 total
+train:611:4 ;; multi ;; range 60-70
+train:616:9 ;; 1450.00
+train:626:2 ;; 100.00
+train:627:7 ;; 1250.00
+train:644:3 ;; 30.00
+train:647:7 ;; 82.00
+train:647:8 ;; 75.00
+train:655:3 ;; 266.00
+train:660:3 ;; 325.00
+train:661:4 ;; 10.00
+train:665:6 ;; 100.00
+train:665:8 ;; 60.00
+train:670:3 ;; 40.00
+train:671:1 ;; 100.00
+train:679:6 ;; 12.00
+train:681:7 ;; 375.00
+train:682:1 ;; 75.00
+train:692:2 ;; 120.00
+train:698:3 ;; 1375.00
+train:699:6 ;; 3250.00
+train:702:0 ;; 2900.00
+train:708:6 ;; 37.00
+train:713:3 ;; 1425.00
+train:715:6 ;; 950.00
+train:718:9 ;; 500.00
+train:723:2 ;; 1500.00
+train:723:4 ;; 2254.00
+train:725:2 ;; 2250.00
+train:725:3 ;; 2400.00
+train:742:10 ;; 4.00
+train:746:7 ;; 700.00
+train:747:6 ;; 1750.00
+train:748:7 ;; 60.00
+train:749:0 ;; 90.00
+train:754:6 ;; 1995.00
+train:754:12 ;; 1574.00
+train:758:7 ;; 6000.00
+train:759:2 ;; 5000.00
+train:762:5 ;; 500.00
+train:764:4 ;; 190.00
+train:766:3 ;; 420.00
+train:768:7 ;; none ;; market range, no offer
+train:768:11 ;; 1700.00
+train:770:7 ;; 1422.00
+train:773:6 ;; 8300.00
+train:774:6 ;; 1450.00
+train:784:6 ;; 260.00
+train:790:5 ;; multi ;; unclear
+train:797:7 ;; 35.00
+train:797:8 ;; 30.00 ;; 2 is an extra amount
+train:799:4 ;; 85.00
+train:801:2 ;; 70.00
+train:815:6 ;; 1695.00
+train:823:2 ;; 115.00
+train:824:33 ;; 1600.00
+train:824:40 ;; 1560.00
+train:828:9 ;; 30.00
+train:830:7 ;; 3500.00
+train:833:4 ;; 125.00
+train:834:2 ;; 360.00
+train:838:0 ;; 14.00
+train:840:7 ;; 2750.00
+train:846:0 ;; 260.00
+train:849:5 ;; 450.00
+train:852:1 ;; multi ;; unclear whether 350 is before or after the 100 off
+train:852:2 ;; 300.00
+train:853:5 ;; multi ;; two lease lengths
+train:865:2 ;; 15.00
+train:866:3 ;; 2400.00
+train:867:7 ;; 12.00
+train:869:5 ;; multi ;; 125 or 140 with delivery
+train:889:4 ;; 500.00
+train:889:5 ;; multi ;; 600 minimum and a 700 request
+train:903:7 ;; 45.00
+train:923:4 ;; 24000.00
+train:931:5 ;; 70.00
+train:934:3 ;; 275.00
+train:951:1 ;; 500.00
+train:951:5 ;; 450.00
+train:953:7 ;; 875.00
+# --- train unsure rows, first 120
+train:959:3 ;; multi ;; 1400 or 1500 options
+train:967:4 ;; multi ;; range 50-60
+train:970:2 ;; multi ;; two options
+train:1037:2 ;; 80.00
+train:1056:8 ;; none ;; question only
+train:1067:9 ;; multi ;; unclear
+train:1070:5 ;; 6.00
+train:1105:3 ;; 110.00
+train:1122:7 ;; 55.00
+train:1126:2 ;; 40.00
+train:1164:2 ;; 650.00
+train:1170:15 ;; multi ;; deliver 9k or pickup 8900
+train:1171:1 ;; 45.00
+train:1207:5 ;; multi ;; 46 or 50
+train:1236:7 ;; 2300.00
+train:1247:1 ;; 145.00
+train:1249:7 ;; 2375.00
+train:1270:5 ;; multi ;; two tiers
+train:1275:8 ;; multi ;; payment plan vs cash
+train:1277:6 ;; multi ;; cash plus gift card
+train:1306:5 ;; 2.00
+train:1307:2 ;; 650.00
+train:1319:3 ;; none ;; refuses, no offer
+train:1320:9 ;; 1250.00
+train:1321:7 ;; multi ;; 25 off 350, resulting price not written
+train:1322:6 ;; 350.00
+train:1326:5 ;; multi ;; 237.5 or 240
+train:1329:2 ;; 3.00
+train:1331:7 ;; 8500.00
+train:1341:5 ;; multi ;; 1800 or 1850 with tires
+train:1362:8 ;; 50.00
+train:1369:3 ;; 2100.00
+train:1379:7 ;; 10.00
+train:1379:10 ;; 10.00
+train:1379:11 ;; 10.00
+train:1381:3 ;; 175.00
+train:1385:10 ;; 4.50
+train:1401:4 ;; multi ;; 225 or 250 with delivery
+train:1410:12 ;; multi ;; 30 with watch or 40 cash
+train:1433:4 ;; 300.00
+train:1460:6 ;; 3300.00
+train:1466:6 ;; 9200.00
+train:1481:8 ;; multi ;; base 125, delivery 130, assembly 140
+train:1495:4 ;; multi ;; range 50-60
+train:1495:6 ;; 60.00
+train:1515:4 ;; multi ;; unclear
+train:1515:5 ;; multi ;; 1500 for 1 year or 1400 for 2 years
+train:1518:5 ;; 165.00
+train:1520:3 ;; 300.00
+train:1536:6 ;; 3500.00
+train:1558:6 ;; 55.00
+train:1570:3 ;; 750.00
+train:1589:4 ;; 150.00
+train:1590:2 ;; multi ;; range 600-650
+train:1594:3 ;; 2950.00 ;; 1500 is a deposit
+train:1610:6 ;; multi ;; 15 or 16
+train:1621:4 ;; 2300.00
+train:1635:3 ;; 425.00
+train:1689:4 ;; 3000.00
+train:1715:8 ;; 2600.00
+train:1717:3 ;; 8000.00
+train:1723:10 ;; 2495.00
+train:1735:4 ;; 1500.00
+train:1737:6 ;; multi ;; 15 now, 20 ideal budget
+train:1741:2 ;; 20.00
+train:1741:3 ;; 40.00
+train:1741:4 ;; 30.00
+train:1743:3 ;; none ;; market range, no offer
+train:1761:3 ;; 90.00
+train:1766:4 ;; 35.00
+train:1769:11 ;; multi ;; two lease lengths
+train:1769:13 ;; multi ;; two rates
+train:1771:5 ;; 3500.00
+train:1773:4 ;; 200.00
+train:1781:5 ;; 2000.00
+train:1782:9 ;; 4000.00
+train:1786:6 ;; multi ;; three unit sizes
+train:1793:5 ;; 7900.00
+train:1801:4 ;; 3000.00
+train:1824:2 ;; 110.00
+train:1832:7 ;; 380.00
+train:1900:2 ;; 895.00 ;; listing price restated
+train:1902:1 ;; 18.00
+train:1903:3 ;; 112.00
+train:1912:2 ;; 115.00
+train:1926:5 ;; 2300.00
+train:1974:9 ;; 160.00
+train:1981:4 ;; multi ;; cash plus gift card
+train:1984:5 ;; 45.00
+train:2026:4 ;; 150.00
+train:2044:5 ;; 3500.00
+train:2068:5 ;; 425.00
+train:2090:2 ;; 2750.00 ;; 3500 is a deposit
+train:2113:4 ;; multi ;; cash or parts
+train:2139:5 ;; 150.00
+train:2148:4 ;; 180.00
+train:2150:9 ;; 8500.00
+train:2187:5 ;; 85.00
+train:2227:1 ;; 1500.00
+train:2247:3 ;; multi ;; "5" means 5000, not readable by the normaliser
+train:2252:5 ;; 280.00
+train:2271:2 ;; 201.00
+train:2299:4 ;; 1300.00
+train:2306:3 ;; 900.00
+train:2314:2 ;; multi ;; one for 150 or two for 250
+train:2352:4 ;; 15.00
+train:2426:3 ;; 1482.00
+train:2437:5 ;; 245.00
+train:2453:10 ;; multi ;; 3900 or 4000
+train:2457:6 ;; 2800.00
+train:2462:6 ;; multi ;; budget 25 or 50
+train:2480:2 ;; 450.00
+train:2496:7 ;; 3950.00
+train:2538:4 ;; multi ;; 100 delivered or 90 pickup
+train:2550:1 ;; 200.00
+train:2555:2 ;; 360.00
+train:2572:4 ;; 38.00
+train:2652:5 ;; 800.00
+train:2698:5 ;; 1275.00
+train:2721:5 ;; multi ;; corrects a typo and offers 6230
+# --- train unsure rows, remaining 112
+train:2725:4 ;; multi ;; two options
+train:2745:3 ;; multi ;; 175 or 150 with pickup
+train:2749:4 ;; 65.00
+train:2800:8 ;; 75.00
+train:2824:5 ;; 35.00
+train:2830:7 ;; 30500.00
+train:2838:5 ;; 85.00
+train:2861:10 ;; multi ;; "2025 or 2O00": two options and a malformed amount
+train:2881:7 ;; 40.00
+train:2893:4 ;; 150.00
+train:2895:4 ;; multi ;; 180 or 150 without the swiper
+train:2950:8 ;; 3375.00
+train:2984:10 ;; 2480.00
+train:3006:4 ;; 80.00
+train:3025:4 ;; multi ;; 30 pickup or 40 delivery
+train:3029:4 ;; 2150.00
+train:3056:4 ;; multi ;; 20 delivered or 10 pickup
+train:3078:7 ;; 40.00
+train:3103:5 ;; 55.00
+train:3107:7 ;; 160.00
+train:3147:2 ;; 30.00
+train:3171:1 ;; none ;; quotes the listing, no offer
+train:3176:2 ;; none ;; quotes the asking price, no offer
+train:3195:9 ;; multi ;; 125 without stand or 150 for both
+train:3204:4 ;; 3000.00
+train:3272:5 ;; multi ;; 250 or 270 with a helmet
+train:3319:4 ;; 500.00
+train:3331:4 ;; 1620.00
+train:3349:2 ;; 450.00
+train:3356:6 ;; 500.00
+train:3361:1 ;; 270.00
+train:3364:0 ;; 75.00
+train:3375:8 ;; multi ;; first year 1700, second year 2100
+train:3384:0 ;; 130.00
+train:3394:0 ;; 250.00
+train:3411:6 ;; 800.00
+train:3419:5 ;; multi ;; 275 without chairs or 300 with
+train:3424:6 ;; 165.00
+train:3444:4 ;; 20.00
+train:3467:7 ;; 2800.00
+train:3476:4 ;; multi ;; 35 pickup or 40 delivery
+train:3515:10 ;; 1000.00
+train:3519:6 ;; 20000.00
+train:3526:2 ;; 40.00
+train:3550:8 ;; multi ;; range 770-780
+train:3558:4 ;; 30.00
+train:3561:0 ;; 1575.00
+train:3610:7 ;; 1600.00
+train:3617:1 ;; 175.00
+train:3645:5 ;; 320.00
+train:3663:14 ;; multi ;; range 11000-11800
+train:3677:6 ;; 2200.00
+train:3687:1 ;; 300.00
+train:3781:3 ;; multi ;; 22 or 25
+train:3804:8 ;; 1350.00
+train:3807:6 ;; 375.00 ;; 25 is delivery
+train:3946:5 ;; 10000.00
+train:3969:8 ;; multi ;; 175 pickup or 200 delivered and assembled
+train:3972:3 ;; 999.00
+train:3989:11 ;; multi ;; 525 delivered or 450 pickup
+train:4047:6 ;; multi ;; range 15-20
+train:4062:6 ;; 13.00
+train:4080:10 ;; multi ;; 65 pickup or 75 delivered
+train:4106:13 ;; 1815.00
+train:4111:4 ;; 2400.00
+train:4113:6 ;; multi ;; 5 now or 10 later
+train:4119:5 ;; multi ;; 35 delivered or 30 pickup
+train:4142:4 ;; 180.00
+train:4149:7 ;; 450.00
+train:4189:2 ;; 2700.00
+train:4271:4 ;; 23.00
+train:4275:5 ;; multi ;; 5000 cash plus 500 more
+train:4278:5 ;; 30.00
+train:4290:6 ;; multi ;; 2700 pickup or 3000 delivered
+train:4322:10 ;; 600.00
+train:4327:5 ;; 11000.00
+train:4329:6 ;; 60.00
+train:4344:4 ;; 500.00
+train:4346:6 ;; 1600.00
+train:4367:6 ;; 2500.00
+train:4378:3 ;; 65.00
+train:4401:4 ;; multi ;; range 314-325
+train:4407:7 ;; multi ;; 100 pickup or 125 delivered
+train:4408:7 ;; multi ;; 1000 plus 100 more
+train:4420:8 ;; 2300.00
+train:4435:5 ;; 50.00
+train:4452:3 ;; 1340.00
+train:4469:4 ;; multi ;; 150 shipped or 110-120 pickup
+train:4501:3 ;; 1200.00
+train:4545:5 ;; multi ;; 179 pickup or 185 delivered
+train:4558:3 ;; multi ;; 30 pickup or 35 delivered
+train:4599:9 ;; 175.00
+train:4601:3 ;; 1800.00
+train:4627:4 ;; multi ;; 35 pickup or 40
+train:4633:3 ;; 675.00
+train:4684:8 ;; multi ;; 70 without or 75 with delivery
+train:4685:6 ;; multi ;; 8000 or 6000 with a trade
+train:4691:4 ;; 12.00
+train:4702:4 ;; 1800.00
+train:4718:5 ;; 399.00
+train:4720:5 ;; multi ;; range 20-25
+train:4732:7 ;; multi ;; 30 delivered or 28 pickup
+train:4741:6 ;; multi ;; 100 pickup or 110 delivered
+train:4746:7 ;; multi ;; 110 or 140 delivered
+train:4765:18 ;; 6500.00
+train:4816:6 ;; 3300.00
+train:4825:5 ;; 65.00
+train:4854:5 ;; none ;; complaint about the price, no offer
+train:5090:5 ;; 40.00
+train:5104:5 ;; 280.00
+train:5112:6 ;; 75.00
+train:5126:25 ;; 6550.00

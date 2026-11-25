@@ -29,6 +29,7 @@ except ImportError:
     from metrics import Tally, to_set
 
 O, B, I = 0, 1, 2
+OB, OI = 3, 4      # "other money" (reduction, reference, refused or listed price): money that is not the price
 MAX_LEN = 256
 
 
@@ -42,13 +43,22 @@ def meta(row):
     return f"{row['role']} {row['category']}{listing}"
 
 
-def encode(tok, row, use_meta, labelled, ignore_mode="mask"):
-    enc = (tok(meta(row), row["text"], truncation="only_second", max_length=MAX_LEN, return_offsets_mapping=True)
-           if use_meta else tok(row["text"], truncation=True, max_length=MAX_LEN, return_offsets_mapping=True))
-    text_seq = 1 if use_meta else 0
+def context_text(row, use_meta, context):
+    """First segment: role/category/listing, and (with context) the message just before this one."""
+    parts = [meta(row)] if use_meta else []
+    if context and row.get("prev_text"):
+        parts.append(f"{row['prev_role']}: {row['prev_text'][:300]}")
+    return " | ".join(parts)
+
+
+def encode(tok, row, use_meta, labelled, ignore_mode="mask", context=False):
+    first = context_text(row, use_meta, context)
+    enc = (tok(first, row["text"], truncation="only_second", max_length=MAX_LEN, return_offsets_mapping=True)
+           if first else tok(row["text"], truncation=True, max_length=MAX_LEN, return_offsets_mapping=True))
+    text_seq = 1 if first else 0
     seq = enc.sequence_ids()
     offsets = enc["offset_mapping"]
-    labels, started = [], set()
+    labels, started, started_other = [], set(), set()
     pos = [tuple(s) for s in row.get("pos", [])] if labelled else []
     ignore = [tuple(s) for s in row.get("ignore", [])] if labelled else []
     for (a, b), s in zip(offsets, seq):
@@ -61,6 +71,9 @@ def encode(tok, row, use_meta, labelled, ignore_mode="mask"):
             started.add(hit)
         elif ignore_mode == "mask" and any(a < ie and b > is_ for is_, ie in ignore):
             labels.append(-100)
+        elif ignore_mode == "other" and (oh := next((i for i, (a2, b2) in enumerate(ignore) if a < b2 and b > a2), None)) is not None:
+            labels.append(OI if oh in started_other else OB)
+            started_other.add(oh)
         else:
             labels.append(O)
     return {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"], "labels": labels,
@@ -75,42 +88,65 @@ def collate(batch, pad_id):
             "labels": torch.tensor([pad(x["labels"], -100) for x in batch])}
 
 
-def decode(text, item, pred):
-    """Token labels -> list of (start, end) character spans."""
+def decode(text, item, pred, keep=None):
+    """Token labels -> list of (start, end) character spans.
+    keep: optional per-token score (probability a token is money); with it only the best-scoring span is
+    returned, so a message yields at most one price."""
     spans, cur = [], None
-    for (a, b), s, p in zip(item["offsets"], item["seq"], pred):
+    for t, ((a, b), s, p) in enumerate(zip(item["offsets"], item["seq"], pred)):
         if s != item["text_seq"]:
             continue
         if p == B or (p == I and cur is None):
             if cur:
                 spans.append(tuple(cur))
-            cur = [a, b]
+            cur = [a, b, t, t]
         elif p == I:
-            cur[1] = b
+            cur[1], cur[3] = b, t
         else:
             if cur:
                 spans.append(tuple(cur))
             cur = None
     if cur:
         spans.append(tuple(cur))
-    return spans
+    if keep is not None and spans:
+        best = max(spans, key=lambda sp: max(keep[sp[2]:sp[3] + 1]))
+        spans = [best]
+    return [(a, b) for a, b, _, _ in spans]
+
+
+def expand_span(text, a, b):
+    """Grow a predicted span to the whole number it sits in ("38" of "3801" -> "3801"), plus a joined "$" or "k",
+    so a half-tagged number is read in full by the normaliser."""
+    while a > 0 and (text[a - 1].isdigit() or (text[a - 1] in ".," and a > 1 and text[a - 2].isdigit())):
+        a -= 1
+    while b < len(text) and (text[b].isdigit() or (text[b] in ".," and b + 1 < len(text) and text[b + 1].isdigit())):
+        b += 1
+    if a > 0 and text[a - 1] == "$":
+        a -= 1
+    if b < len(text) and text[b] in "kK" and not (b + 1 < len(text) and text[b + 1].isalpha()):
+        b += 1
+    return a, b
 
 
 @torch.no_grad()
-def predict(model, tok, rows, items, device, batch_size=128):
+def predict(model, tok, rows, items, device, batch_size=128, single=False):
     model.eval()
     out = []
     order = sorted(range(len(rows)), key=lambda i: len(items[i]["input_ids"]))
-    results = {}
+    results, scores = {}, {}
     for k in range(0, len(order), batch_size):
         idx = order[k:k + batch_size]
         batch = collate([items[i] for i in idx], tok.pad_token_id)
         logits = model(input_ids=batch["input_ids"].to(device), attention_mask=batch["attention_mask"].to(device)).logits
-        preds = logits.argmax(-1).cpu().tolist()
-        for i, p in zip(idx, preds):
+        probs = logits.float().softmax(-1)
+        top = probs.argmax(-1)
+        preds = torch.where(top <= I, top, torch.zeros_like(top)).cpu().tolist()   # other money counts as not a price
+        money = (probs[..., B] + probs[..., I]).cpu().tolist()
+        for i, p, m in zip(idx, preds, money):
             results[i] = p[:len(items[i]["input_ids"])]
+            scores[i] = m[:len(items[i]["input_ids"])]
     for i, row in enumerate(rows):
-        spans = decode(row["text"], items[i], results[i])
+        spans = [expand_span(row["text"], a, b) for a, b in decode(row["text"], items[i], results[i], scores[i] if single else None)]
         values, unreadable = [], 0
         for s, e in spans:
             v = normalise_amount(row["text"][s:e].strip())
@@ -127,6 +163,8 @@ def score(rows, preds):
     t, alarms, unread, unreadable = Tally(), 0, 0, 0
     for row, p in zip(rows, preds):
         unreadable += p["unreadable"]
+        if row.get("excluded"):
+            continue
         if row.get("gold") is None:
             unread += 1
             alarms += bool(p["values"])
@@ -148,9 +186,12 @@ def main():
     ap.add_argument("--weight-decay", type=float, default=0.01)
     ap.add_argument("--warmup", type=float, default=0.06)
     ap.add_argument("--unread-fraction", type=float, default=0.15, help="share of the all-negative unread rows to train on")
-    ap.add_argument("--ignore-mode", choices=["mask", "negative"], default="mask",
+    ap.add_argument("--ignore-mode", choices=["mask", "negative", "other"], default="mask",
                     help="mask: money the gold does not mark (budgets, deltas) is left out of the loss, so the model "
                          "tags all money; negative: it is tagged O, so the model learns the gold's own sense of price")
+    ap.add_argument("--context", action="store_true", help="also feed the previous message of the dialogue")
+    ap.add_argument("--fp32", action="store_true", help="no mixed precision (DeBERTa collapsed under bf16)")
+    ap.add_argument("--single", action="store_true", help="return at most one price per message (the best-scoring span)")
     ap.add_argument("--no-meta", action="store_true", help="feed the message alone (no role, category, listing price)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--predict", choices=["train", "validation", "test"], help="load --model and write predictions for this split; no training")
@@ -174,8 +215,8 @@ def main():
         tok = AutoTokenizer.from_pretrained(args.model)
         model = AutoModelForTokenClassification.from_pretrained(args.model).to(device)
         rows = read_jsonl(os.path.join(args.data, f"{args.predict}.jsonl"))
-        items = [encode(tok, r, use_meta, labelled=False) for r in rows]
-        preds = predict(model, tok, rows, items, device)
+        items = [encode(tok, r, use_meta, labelled=False, context=args.context) for r in rows]
+        preds = predict(model, tok, rows, items, device, single=args.single)
         if "gold" in rows[0]:
             say("scores on " + args.predict + ": " + json.dumps({k: v for k, v in score(rows, preds).items() if k != "confusion"}))
         path = os.path.join(args.out, f"{args.predict}_predictions.jsonl")
@@ -187,8 +228,10 @@ def main():
 
     say(f"device {device}; model {args.model_name}; meta {use_meta}; args {vars(args)}")
     tok = AutoTokenizer.from_pretrained(args.model_name)
+    names = ["O", "B", "I", "OB", "OI"] if args.ignore_mode == "other" else ["O", "B", "I"]
+    n_labels = len(names)
     model = AutoModelForTokenClassification.from_pretrained(
-        args.model_name, num_labels=3, id2label={0: "O", 1: "B", 2: "I"}, label2id={"O": 0, "B": 1, "I": 2}).to(device)
+        args.model_name, num_labels=n_labels, id2label=dict(enumerate(names)), label2id={n: i for i, n in enumerate(names)}).to(device)
 
     train_rows = read_jsonl(os.path.join(args.data, "train.jsonl"))
     val_rows = read_jsonl(os.path.join(args.data, "validation.jsonl"))
@@ -197,8 +240,8 @@ def main():
     random.shuffle(unread)
     train_rows = labelled + unread[:int(len(unread) * args.unread_fraction)]
     say(f"train rows {len(train_rows)} ({len(labelled)} labelled + {len(train_rows) - len(labelled)} unread negatives); val rows {len(val_rows)}")
-    train_items = [encode(tok, r, use_meta, True, args.ignore_mode) for r in train_rows]
-    val_items = [encode(tok, r, use_meta, False) for r in val_rows]
+    train_items = [encode(tok, r, use_meta, True, args.ignore_mode, args.context) for r in train_rows]
+    val_items = [encode(tok, r, use_meta, False, context=args.context) for r in val_rows]
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     steps = args.epochs * ((len(train_items) + args.batch_size - 1) // args.batch_size)
@@ -211,7 +254,7 @@ def main():
         total, n, t0 = 0.0, 0, time.time()
         for k in range(0, len(order), args.batch_size):
             batch = {key: v.to(device) for key, v in collate([train_items[i] for i in order[k:k + args.batch_size]], tok.pad_token_id).items()}
-            with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=device == "cuda"):
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=device == "cuda" and not args.fp32):
                 loss = model(**batch).loss
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -220,7 +263,7 @@ def main():
             opt.zero_grad(set_to_none=True)
             total += loss.item()
             n += 1
-        preds = predict(model, tok, val_rows, val_items, device)
+        preds = predict(model, tok, val_rows, val_items, device, single=args.single)
         s = score(val_rows, preds)
         history.append({"epoch": epoch, "train_loss": total / n, **s})
         say(f"epoch {epoch}: loss {total / n:.4f} | val exact {s['exact_match']:.4f} P {s['precision']:.4f} R {s['recall']:.4f} "
