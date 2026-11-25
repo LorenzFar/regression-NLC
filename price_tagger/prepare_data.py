@@ -29,17 +29,21 @@ def overlaps(a, b):
     return a[0] < b[1] and b[0] < a[1]
 
 
-def build(row, labelled):
+def build(row, labelled, prev=None):
     listing = float(row["listing_price"]) if row["listing_price"] else None
     out = {"id": f"{row['split']}:{row['dialogue']}:{row['turn']}", "text": row["text"], "role": row["role"],
            "category": row["category"], "listing": listing}
+    if prev is not None:   # the message just before this one in the same dialogue: model input only, never a label
+        out["prev_role"], out["prev_text"] = prev
     if not labelled:
         return out
     gold_price = row["gold_price"].strip()
-    out["gold"] = None if not gold_price else [] if gold_price == "none" else sorted({p.strip() for p in gold_price.split("|")})
     spans = row.get("gold_spans", "")
+    out["excluded"] = not gold_price and row["gold_note"].startswith("uncertain")   # speaker proposed several prices
+    out["gold"] = None if not gold_price else [] if gold_price == "none" else [gold_price]
     pos = [tuple(s) for s in json.loads(spans)] if spans else []
-    out["train_ok"] = bool(spans) or not gold_price     # unread rows are all-negative examples
+    # unread rows are all-negative examples; a price that is not written in the text (typo label) has no span
+    out["train_ok"] = (bool(spans) or not gold_price) and not out["excluded"]
     kept = [(c.start, c.end) for c in explain(row["text"], listing) if c.mention is not None]
     out["pos"] = [list(s) for s in pos]
     out["ignore"] = [list(s) for s in kept if not any(overlaps(s, p) for p in pos)]
@@ -58,11 +62,16 @@ def main(argv=None):
         _, rows = read(Path(args.dir) / f"{split}_turns.csv")
         labelled = split != "test"
         if labelled and rows and "gold_spans" not in rows[0]:
-            sys.exit(f"{split}: no gold_spans column; run python -m scripts.gold_spans first")
+            sys.exit(f"{split}: no gold_spans column; run python -m scripts.gold_offer apply first")
+        previous, last = {}, {}
+        for r in rows:   # CSV order is dialogue order
+            previous[(r["dialogue"], r["turn"])] = last.get(r["dialogue"])
+            if r["text"].strip():
+                last[r["dialogue"]] = (r["role"], r["text"].strip())
         rows = [r for r in rows if r["text"].strip()]
         with (Path(args.out) / f"{split}.jsonl").open("w", encoding="utf-8") as f:
             for r in rows:
-                f.write(json.dumps(build(r, labelled), ensure_ascii=False) + "\n")
+                f.write(json.dumps(build(r, labelled, previous[(r["dialogue"], r["turn"])]), ensure_ascii=False) + "\n")
         print(f"{split}: {len(rows)} messages -> {args.out}/{split}.jsonl" + ("" if labelled else " (text only)"))
 
 

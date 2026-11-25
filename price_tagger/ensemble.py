@@ -11,9 +11,9 @@ import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 if __package__:
-    from .train import collate, decode, encode, read_jsonl, score
+    from .train import collate, decode, encode, expand_span, read_jsonl, score
 else:  # Keep the existing standalone GPU/Jupyter workflow working.
-    from train import collate, decode, encode, read_jsonl, score
+    from train import collate, decode, encode, expand_span, read_jsonl, score
 
 
 @torch.no_grad()
@@ -24,6 +24,9 @@ def main():
     ap.add_argument("--split", choices=["train", "validation", "test"], required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--no-meta", action="store_true")
+    ap.add_argument("--single", action="store_true", help="return at most one price per message")
+    ap.add_argument("--o-scale", type=float, default=1.0, help="multiply P(not money) before deciding; tune on validation")
+    ap.add_argument("--context", action="store_true", help="models were trained with the previous message as input")
     ap.add_argument("--batch-size", type=int, default=128)
     args = ap.parse_args()
     from price_reference import normalise_amount
@@ -31,7 +34,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tok = AutoTokenizer.from_pretrained(args.models[0])
     rows = read_jsonl(os.path.join(args.data, f"{args.split}.jsonl"))
-    items = [encode(tok, r, not args.no_meta, labelled=False) for r in rows]
+    items = [encode(tok, r, not args.no_meta, labelled=False, context=args.context) for r in rows]
     order = sorted(range(len(rows)), key=lambda i: len(items[i]["input_ids"]))
     probs = {}
     for path in args.models:
@@ -41,14 +44,20 @@ def main():
             batch = collate([items[i] for i in idx], tok.pad_token_id)
             p = model(input_ids=batch["input_ids"].to(device),
                       attention_mask=batch["attention_mask"].to(device)).logits.softmax(-1).cpu()
+            if p.shape[-1] == 5:   # "other money" model: fold its two extra classes into "not a price" so it mixes with 3-label models
+                p = torch.cat([(p[..., 0] + p[..., 3] + p[..., 4]).unsqueeze(-1), p[..., 1:3]], dim=-1)
             for j, i in enumerate(idx):
                 n = len(items[i]["input_ids"])
                 probs[i] = probs.get(i, 0) + p[j, :n] / len(args.models)
         del model
     preds = []
     for i, row in enumerate(rows):
-        labels = probs[i].argmax(-1).tolist()
-        spans = decode(row["text"], items[i], labels)
+        p = probs[i].clone()
+        p[:, 0] *= args.o_scale   # >1 favours "not a price" (fewer prices), <1 favours tagging
+        top = p.argmax(-1)
+        labels = torch.where(top <= 2, top, torch.zeros_like(top)).tolist()   # "other money" counts as not a price
+        keep = (probs[i][:, 1] + probs[i][:, 2]).tolist() if args.single else None
+        spans = [expand_span(row["text"], a, b) for a, b in decode(row["text"], items[i], labels, keep)]
         values, unreadable = [], 0
         for s, e in spans:
             v = normalise_amount(row["text"][s:e].strip())

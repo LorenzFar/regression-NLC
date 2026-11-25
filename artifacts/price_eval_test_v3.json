@@ -1,0 +1,614 @@
+{
+  "splits": [
+    "test"
+  ],
+  "rows_scored": 2899,
+  "unread_rows": 3347,
+  "excluded_multi_proposal_rows": 12,
+  "systems": {
+    "extractor": {
+      "overall": {
+        "n": 2899,
+        "exact_match": 0.8930665746809244,
+        "precision": 0.8747591522157996,
+        "recall": 0.9895379250217959,
+        "f1": 0.9286152587441194,
+        "presence_precision": 0.96845694799659,
+        "presence_recall": 0.990409764603313,
+        "presence_f1": 0.9793103448275862,
+        "confusion": {
+          "price_found": 2272,
+          "false_price": 74,
+          "missed_price": 22,
+          "correct_none": 531
+        }
+      },
+      "role": {
+        "buyer": {
+          "n": 1402,
+          "exact_match": 0.8901569186875892,
+          "precision": 0.8829231916480239,
+          "recall": 0.9891395154553049,
+          "f1": 0.9330181245074861,
+          "presence_precision": 0.9633848657445078,
+          "presence_recall": 0.9891395154553049,
+          "presence_f1": 0.9760923330585326,
+          "confusion": {
+            "price_found": 1184,
+            "false_price": 45,
+            "missed_price": 13,
+            "correct_none": 160
+          }
+        },
+        "seller": {
+          "n": 1497,
+          "exact_match": 0.8957915831663327,
+          "precision": 0.8660287081339713,
+          "recall": 0.9899726526891522,
+          "f1": 0.9238621863037005,
+          "presence_precision": 0.9740376007162042,
+          "presence_recall": 0.99179580674567,
+          "presence_f1": 0.982836495031617,
+          "confusion": {
+            "price_found": 1088,
+            "false_price": 29,
+            "missed_price": 9,
+            "correct_none": 371
+          }
+        }
+      },
+      "category": {
+        "bike": {
+          "n": 481,
+          "exact_match": 0.9022869022869023,
+          "precision": 0.8835616438356164,
+          "recall": 0.9923076923076923,
+          "f1": 0.9347826086956521,
+          "presence_precision": 0.9675810473815462,
+          "presence_recall": 0.9948717948717949,
+          "presence_f1": 0.9810366624525916,
+          "confusion": {
+            "price_found": 388,
+            "false_price": 13,
+            "missed_price": 2,
+            "correct_none": 78
+          }
+        },
+        "car": {
+          "n": 425,
+          "exact_match": 0.9176470588235294,
+          "precision": 0.8938547486033519,
+          "recall": 1.0,
+          "f1": 0.943952802359882,
+          "presence_precision": 0.960960960960961,
+          "presence_recall": 1.0,
+          "presence_f1": 0.9800918836140887,
+          "confusion": {
+            "price_found": 320,
+            "false_price": 13,
+            "missed_price": 0,
+            "correct_none": 92
+          }
+        },
+        "electronics": {
+          "n": 391,
+          "exact_match": 0.907928388746803,
+          "precision": 0.8876712328767123,
+          "recall": 0.9969230769230769,
+          "f1": 0.9391304347826087,
+          "presence_precision": 0.9818181818181818,
+          "presence_recall": 0.9969230769230769,
+          "presence_f1": 0.9893129770992366,
+          "confusion": {
+            "price_found": 324,
+            "false_price": 6,
+            "missed_price": 1,
+            "correct_none": 60
+          }
+        },
+        "furniture": {
+          "n": 811,
+          "exact_match": 0.87422934648582,
+          "precision": 0.8682476943346509,
+          "recall": 0.9791976225854383,
+          "f1": 0.9203910614525139,
+          "presence_precision": 0.9836065573770492,
+          "presence_recall": 0.9806835066864784,
+          "presence_f1": 0.9821428571428572,
+          "confusion": {
+            "price_found": 660,
+            "false_price": 11,
+            "missed_price": 13,
+            "correct_none": 127
+          }
+        },
+        "housing": {
+          "n": 638,
+          "exact_match": 0.8840125391849529,
+          "precision": 0.8542435424354243,
+          "recall": 0.9914346895074947,
+          "f1": 0.9177403369672944,
+          "presence_precision": 0.9391480730223124,
+          "presence_recall": 0.9914346895074947,
+          "presence_f1": 0.9645833333333333,
+          "confusion": {
+            "price_found": 463,
+            "false_price": 30,
+            "missed_price": 4,
+            "correct_none": 141
+          }
+        },
+        "phone": {
+          "n": 153,
+          "exact_match": 0.8954248366013072,
+          "precision": 0.8796992481203008,
+          "recall": 0.9831932773109243,
+          "f1": 0.9285714285714285,
+          "presence_precision": 0.9915254237288136,
+          "presence_recall": 0.9831932773109243,
+          "presence_f1": 0.9873417721518987,
+          "confusion": {
+            "price_found": 117,
+            "false_price": 1,
+            "missed_price": 2,
+            "correct_none": 33
+          }
+        }
+      },
+      "unread_false_alarms": 0
+    },
+    "previous_ensemble": {
+      "overall": {
+        "n": 2899,
+        "exact_match": 0.9748189030700242,
+        "precision": 0.9738869863013698,
+        "recall": 0.9917175239755885,
+        "f1": 0.9827213822894169,
+        "presence_precision": 0.9768835616438356,
+        "presence_recall": 0.994768962510898,
+        "presence_f1": 0.9857451403887688,
+        "confusion": {
+          "price_found": 2282,
+          "false_price": 54,
+          "missed_price": 12,
+          "correct_none": 551
+        }
+      },
+      "role": {
+        "buyer": {
+          "n": 1402,
+          "exact_match": 0.9679029957203994,
+          "precision": 0.967479674796748,
+          "recall": 0.9941520467836257,
+          "f1": 0.980634528224145,
+          "presence_precision": 0.9691056910569106,
+          "presence_recall": 0.9958228905597326,
+          "presence_f1": 0.9822826534816645,
+          "confusion": {
+            "price_found": 1192,
+            "false_price": 38,
+            "missed_price": 5,
+            "correct_none": 167
+          }
+        },
+        "seller": {
+          "n": 1497,
+          "exact_match": 0.9812959251837008,
+          "precision": 0.9810126582278481,
+          "recall": 0.9890610756608933,
+          "f1": 0.985020426690876,
+          "presence_precision": 0.9855334538878843,
+          "presence_recall": 0.9936189608021878,
+          "presence_f1": 0.9895596913300045,
+          "confusion": {
+            "price_found": 1090,
+            "false_price": 16,
+            "missed_price": 7,
+            "correct_none": 384
+          }
+        }
+      },
+      "category": {
+        "bike": {
+          "n": 481,
+          "exact_match": 0.9812889812889813,
+          "precision": 0.9798488664987406,
+          "recall": 0.9974358974358974,
+          "f1": 0.98856416772554,
+          "presence_precision": 0.9798488664987406,
+          "presence_recall": 0.9974358974358974,
+          "presence_f1": 0.98856416772554,
+          "confusion": {
+            "price_found": 389,
+            "false_price": 8,
+            "missed_price": 1,
+            "correct_none": 83
+          }
+        },
+        "car": {
+          "n": 425,
+          "exact_match": 0.9811764705882353,
+          "precision": 0.9785276073619632,
+          "recall": 0.996875,
+          "f1": 0.9876160990712073,
+          "presence_precision": 0.9785276073619632,
+          "presence_recall": 0.996875,
+          "presence_f1": 0.9876160990712073,
+          "confusion": {
+            "price_found": 319,
+            "false_price": 7,
+            "missed_price": 1,
+            "correct_none": 98
+          }
+        },
+        "electronics": {
+          "n": 391,
+          "exact_match": 0.9846547314578005,
+          "precision": 0.9848024316109423,
+          "recall": 0.9969230769230769,
+          "f1": 0.9908256880733944,
+          "presence_precision": 0.9848024316109423,
+          "presence_recall": 0.9969230769230769,
+          "presence_f1": 0.9908256880733944,
+          "confusion": {
+            "price_found": 324,
+            "false_price": 5,
+            "missed_price": 1,
+            "correct_none": 61
+          }
+        },
+        "furniture": {
+          "n": 811,
+          "exact_match": 0.9802712700369913,
+          "precision": 0.9780380673499268,
+          "recall": 0.9925705794947994,
+          "f1": 0.985250737463127,
+          "presence_precision": 0.9838945827232797,
+          "presence_recall": 0.9985141158989599,
+          "presence_f1": 0.9911504424778761,
+          "confusion": {
+            "price_found": 672,
+            "false_price": 11,
+            "missed_price": 1,
+            "correct_none": 127
+          }
+        },
+        "housing": {
+          "n": 638,
+          "exact_match": 0.9498432601880877,
+          "precision": 0.9481327800829875,
+          "recall": 0.9785867237687366,
+          "f1": 0.9631190727081137,
+          "presence_precision": 0.9543568464730291,
+          "presence_recall": 0.9850107066381156,
+          "presence_f1": 0.9694415173867229,
+          "confusion": {
+            "price_found": 460,
+            "false_price": 22,
+            "missed_price": 7,
+            "correct_none": 149
+          }
+        },
+        "phone": {
+          "n": 153,
+          "exact_match": 0.9869281045751634,
+          "precision": 0.9915966386554622,
+          "recall": 0.9915966386554622,
+          "f1": 0.9915966386554622,
+          "presence_precision": 0.9915966386554622,
+          "presence_recall": 0.9915966386554622,
+          "presence_f1": 0.9915966386554622,
+          "confusion": {
+            "price_found": 118,
+            "false_price": 1,
+            "missed_price": 1,
+            "correct_none": 33
+          }
+        }
+      },
+      "unread_false_alarms": 0
+    },
+    "new_ensemble": {
+      "overall": {
+        "n": 2899,
+        "exact_match": 0.9744739565367369,
+        "precision": 0.975504941985389,
+        "recall": 0.9895379250217959,
+        "f1": 0.9824713265526943,
+        "presence_precision": 0.9785131070047272,
+        "presence_recall": 0.9925893635571055,
+        "presence_f1": 0.9855009738151915,
+        "confusion": {
+          "price_found": 2277,
+          "false_price": 50,
+          "missed_price": 17,
+          "correct_none": 555
+        }
+      },
+      "role": {
+        "buyer": {
+          "n": 1402,
+          "exact_match": 0.9657631954350927,
+          "precision": 0.9689542483660131,
+          "recall": 0.9908103592314118,
+          "f1": 0.979760429574556,
+          "presence_precision": 0.9697712418300654,
+          "presence_recall": 0.9916457811194653,
+          "presence_f1": 0.9805865344898803,
+          "confusion": {
+            "price_found": 1187,
+            "false_price": 37,
+            "missed_price": 10,
+            "correct_none": 168
+          }
+        },
+        "seller": {
+          "n": 1497,
+          "exact_match": 0.9826319305277221,
+          "precision": 0.9827742520398912,
+          "recall": 0.9881494986326345,
+          "f1": 0.9854545454545455,
+          "presence_precision": 0.9882139619220308,
+          "presence_recall": 0.9936189608021878,
+          "presence_f1": 0.990909090909091,
+          "confusion": {
+            "price_found": 1090,
+            "false_price": 13,
+            "missed_price": 7,
+            "correct_none": 387
+          }
+        }
+      },
+      "category": {
+        "bike": {
+          "n": 481,
+          "exact_match": 0.9771309771309772,
+          "precision": 0.9772727272727273,
+          "recall": 0.9923076923076923,
+          "f1": 0.9847328244274809,
+          "presence_precision": 0.9797979797979798,
+          "presence_recall": 0.9948717948717949,
+          "presence_f1": 0.9872773536895675,
+          "confusion": {
+            "price_found": 388,
+            "false_price": 8,
+            "missed_price": 2,
+            "correct_none": 83
+          }
+        },
+        "car": {
+          "n": 425,
+          "exact_match": 0.9835294117647059,
+          "precision": 0.9815384615384616,
+          "recall": 0.996875,
+          "f1": 0.9891472868217054,
+          "presence_precision": 0.9815384615384616,
+          "presence_recall": 0.996875,
+          "presence_f1": 0.9891472868217054,
+          "confusion": {
+            "price_found": 319,
+            "false_price": 6,
+            "missed_price": 1,
+            "correct_none": 99
+          }
+        },
+        "electronics": {
+          "n": 391,
+          "exact_match": 0.9846547314578005,
+          "precision": 0.9848024316109423,
+          "recall": 0.9969230769230769,
+          "f1": 0.9908256880733944,
+          "presence_precision": 0.9848024316109423,
+          "presence_recall": 0.9969230769230769,
+          "presence_f1": 0.9908256880733944,
+          "confusion": {
+            "price_found": 324,
+            "false_price": 5,
+            "missed_price": 1,
+            "correct_none": 61
+          }
+        },
+        "furniture": {
+          "n": 811,
+          "exact_match": 0.9802712700369913,
+          "precision": 0.983751846381093,
+          "recall": 0.9895988112927192,
+          "f1": 0.9866666666666666,
+          "presence_precision": 0.9867060561299852,
+          "presence_recall": 0.9925705794947994,
+          "presence_f1": 0.9896296296296296,
+          "confusion": {
+            "price_found": 668,
+            "false_price": 9,
+            "missed_price": 5,
+            "correct_none": 129
+          }
+        },
+        "housing": {
+          "n": 638,
+          "exact_match": 0.9498432601880877,
+          "precision": 0.95,
+          "recall": 0.9764453961456103,
+          "f1": 0.9630411826821542,
+          "presence_precision": 0.95625,
+          "presence_recall": 0.9828693790149893,
+          "presence_f1": 0.969376979936642,
+          "confusion": {
+            "price_found": 459,
+            "false_price": 21,
+            "missed_price": 8,
+            "correct_none": 150
+          }
+        },
+        "phone": {
+          "n": 153,
+          "exact_match": 0.9869281045751634,
+          "precision": 0.9833333333333333,
+          "recall": 0.9915966386554622,
+          "f1": 0.9874476987447698,
+          "presence_precision": 0.9916666666666667,
+          "presence_recall": 1.0,
+          "presence_f1": 0.99581589958159,
+          "confusion": {
+            "price_found": 119,
+            "false_price": 1,
+            "missed_price": 0,
+            "correct_none": 33
+          }
+        }
+      },
+      "unread_false_alarms": 0
+    },
+    "new_other_money": {
+      "overall": {
+        "n": 2899,
+        "exact_match": 0.9744739565367369,
+        "precision": 0.9746998284734134,
+        "recall": 0.9908456843940715,
+        "f1": 0.9827064418504107,
+        "presence_precision": 0.9772727272727273,
+        "presence_recall": 0.9934612031386225,
+        "presence_f1": 0.9853004755728492,
+        "confusion": {
+          "price_found": 2279,
+          "false_price": 53,
+          "missed_price": 15,
+          "correct_none": 552
+        }
+      },
+      "role": {
+        "buyer": {
+          "n": 1402,
+          "exact_match": 0.9664764621968617,
+          "precision": 0.967453213995118,
+          "recall": 0.9933166248955723,
+          "f1": 0.9802143446001649,
+          "presence_precision": 0.96826688364524,
+          "presence_recall": 0.9941520467836257,
+          "presence_f1": 0.9810387469084914,
+          "confusion": {
+            "price_found": 1190,
+            "false_price": 39,
+            "missed_price": 7,
+            "correct_none": 166
+          }
+        },
+        "seller": {
+          "n": 1497,
+          "exact_match": 0.9819639278557114,
+          "precision": 0.9827742520398912,
+          "recall": 0.9881494986326345,
+          "f1": 0.9854545454545455,
+          "presence_precision": 0.9873073436083409,
+          "presence_recall": 0.9927073837739289,
+          "presence_f1": 0.9900000000000001,
+          "confusion": {
+            "price_found": 1089,
+            "false_price": 14,
+            "missed_price": 8,
+            "correct_none": 386
+          }
+        }
+      },
+      "category": {
+        "bike": {
+          "n": 481,
+          "exact_match": 0.9771309771309772,
+          "precision": 0.9821882951653944,
+          "recall": 0.9897435897435898,
+          "f1": 0.9859514687100894,
+          "presence_precision": 0.9821882951653944,
+          "presence_recall": 0.9897435897435898,
+          "presence_f1": 0.9859514687100894,
+          "confusion": {
+            "price_found": 386,
+            "false_price": 7,
+            "missed_price": 4,
+            "correct_none": 84
+          }
+        },
+        "car": {
+          "n": 425,
+          "exact_match": 0.9835294117647059,
+          "precision": 0.9815384615384616,
+          "recall": 0.996875,
+          "f1": 0.9891472868217054,
+          "presence_precision": 0.9815384615384616,
+          "presence_recall": 0.996875,
+          "presence_f1": 0.9891472868217054,
+          "confusion": {
+            "price_found": 319,
+            "false_price": 6,
+            "missed_price": 1,
+            "correct_none": 99
+          }
+        },
+        "electronics": {
+          "n": 391,
+          "exact_match": 0.9820971867007673,
+          "precision": 0.9818181818181818,
+          "recall": 0.9969230769230769,
+          "f1": 0.9893129770992366,
+          "presence_precision": 0.9818181818181818,
+          "presence_recall": 0.9969230769230769,
+          "presence_f1": 0.9893129770992366,
+          "confusion": {
+            "price_found": 324,
+            "false_price": 6,
+            "missed_price": 1,
+            "correct_none": 60
+          }
+        },
+        "furniture": {
+          "n": 811,
+          "exact_match": 0.9815043156596794,
+          "precision": 0.9823529411764705,
+          "recall": 0.9925705794947994,
+          "f1": 0.9874353288987434,
+          "presence_precision": 0.9852941176470589,
+          "presence_recall": 0.9955423476968797,
+          "presence_f1": 0.9903917220990393,
+          "confusion": {
+            "price_found": 670,
+            "false_price": 10,
+            "missed_price": 3,
+            "correct_none": 128
+          }
+        },
+        "housing": {
+          "n": 638,
+          "exact_match": 0.9498432601880877,
+          "precision": 0.9462809917355371,
+          "recall": 0.9807280513918629,
+          "f1": 0.9631966351209252,
+          "presence_precision": 0.9524793388429752,
+          "presence_recall": 0.987152034261242,
+          "presence_f1": 0.9695057833859095,
+          "confusion": {
+            "price_found": 461,
+            "false_price": 23,
+            "missed_price": 6,
+            "correct_none": 148
+          }
+        },
+        "phone": {
+          "n": 153,
+          "exact_match": 0.9869281045751634,
+          "precision": 0.9833333333333333,
+          "recall": 0.9915966386554622,
+          "f1": 0.9874476987447698,
+          "presence_precision": 0.9916666666666667,
+          "presence_recall": 1.0,
+          "presence_f1": 0.99581589958159,
+          "confusion": {
+            "price_found": 119,
+            "false_price": 1,
+            "missed_price": 0,
+            "correct_none": 33
+          }
+        }
+      },
+      "unread_false_alarms": 0
+    }
+  }
+}

@@ -21,6 +21,8 @@ __pycache__/
 
 # Generated tagger datasets, training runs and resolver reports
 /price_tagger/data/
+/price_tagger/data_offer/
+/price_tagger/data_v3/
 /price_tagger/runs/
 /runs/
 /evaluation/resolver/report*.json

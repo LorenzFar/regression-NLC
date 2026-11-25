@@ -4,26 +4,34 @@ A token classifier (DistilBERT by default) that tags the characters of a message
 `price_reference.normalise_amount` then reads each tagged span, exactly as for the rules, so the model finds
 the amount and never writes a number.
 
-## Labels
+## Labels: one price per message
 
-`python -m scripts.gold_spans` adds a `gold_spans` column (character offsets of each gold price) to
-`train_turns.csv` and `validation_turns.csv`. `test_turns.csv` is never given spans and is not used to train.
+`gold_price` is the ONE price the speaker puts forward (proposes, asks, counter-offers, accepts), or `none`. A message
+whose speaker really proposes several prices (a range, "50 pickup / 55 delivered") or whose price is typed wrongly and
+cannot be read from the text has an empty `gold_price` and a `gold_note` starting `uncertain:`: left out of training and
+scoring. `gold_spans` (train and validation only) marks where that price is in the text; `[]` = none. Test never gets
+spans. The original multi-price `gold_price` / `gold_note` are in `artifacts/gold_original/`; the commands
 
-`python -m price_tagger.prepare_data` writes `price_tagger/data/{train,validation}.jsonl`. Per message:
+```
+# The submission includes the archived originals. Keep them when rebuilding.
+python -m scripts.gold_offer propose     # score the several-price rows
+python -m scripts.gold_offer apply       # rebuild gold_price, gold_note, gold_spans from the archive + decisions.txt
+```
 
-| field | meaning |
-|---|---|
-| `pos` | spans of the gold prices, tagged B/I |
-| `ignore` | money the rules keep but the gold does not mark (budgets, deltas, market prices) |
-| `train_ok` | false for the few rows whose gold amount is a typo not written in the text |
+rebuild everything, so the labels are reproducible. Rules: a refused ("1700 is too much"), listed, reference
+("I paid 600") or reduction ("350 off") price is not the price; for "asking X but I can do Y" it is Y; a buyer who
+states what they want or can pay ("I was looking to spend $135", "my budget is 1500", "I have 200 cash") is
+proposing that amount. Decisions for multi-price rows are in `artifacts/gold_offer/decisions.txt` (AI-annotated, not
+human-adjudicated).
 
-Two ways to treat `ignore` (`train.py --ignore-mode`):
+`python -m price_tagger.prepare_data --out price_tagger/data_offer` writes training and validation JSONL from the CSVs
+alone. Per message: `pos` (the span of the price, tagged B/I), `ignore` (other money the rules find: reductions,
+reference, refused or listed prices), `train_ok` (false for excluded rows) and `excluded`.
 
-* `mask` (default): left out of the loss. The model tags all money, as an extractor should.
-* `negative`: tagged O. The model learns the gold's own sense of "price", which is partly the resolver's job.
-
-Everything else, including numbers the rules reject ("6 months", "5:30"), is tagged O. Those negatives are the
-rules' judgement, not ground truth.
+`train.py --ignore-mode` chooses what `ignore` spans become: `mask` (left out of the loss), `negative` (plain O) or
+`other` (their own "other money" label, so the model learns money-that-is-not-the-price apart from not-money; only the
+price label is returned). `--context` adds the previous message as input. `--single` / `ensemble.py --single` return
+at most one price per message: the best-scoring span, extended to the whole number it sits in.
 
 ## Training
 
@@ -33,31 +41,45 @@ directory, then `python train.py --data data --out runs/NAME [--model-name rober
 Model selection uses validation only. Test is predicted once, at the end:
 `python train.py --data data --out runs/NAME --predict test --model runs/NAME/model`.
 
-## RoBERTa ensemble from the repository root
+## Reproduce the report (Section 5.5)
 
-Install the existing `nlu` extra for PyTorch/transformers and `data` for CSV
-preparation from Parquet: `python -m pip install -e ".[nlu,data]"`.
-The scripts accept RoBERTa via `--model-name roberta-base`; the default single
-model remains DistilBERT. Use the preprocessing and metadata settings used by
-your trained checkpoints when reproducing a run.
+Use the feature/price-reference branch and run from the repository root. The
+CraigslistBargain turn CSVs in `artifacts/{train,validation,test}_turns.csv`
+contain the price annotations. Source dialogues: [Stanford NLP CraigslistBargain](https://huggingface.co/datasets/stanfordnlp/craigslist_bargains).
+The archive in `artifacts/gold_original/` and the recorded AI relabelling decisions in
+`artifacts/gold_offer/decisions.txt` let you reconstruct these CSVs. Generate the
+scorer proposals before applying the decisions.
 
 ```powershell
-python -m price_tagger.train --data price_tagger/data --out runs/roberta-seed0 --model-name roberta-base --seed 0
-python -m price_tagger.train --data price_tagger/data --out runs/roberta-seed1 --model-name roberta-base --seed 1
-python -m price_tagger.ensemble --data price_tagger/data --models runs/roberta-seed0/model runs/roberta-seed1/model --split validation --out runs/roberta-ensemble
+python -m scripts.gold_offer propose
+python -m scripts.gold_offer apply
+python -m evaluation.price_extractor.run --split validation
+python -m evaluation.price_extractor.run --split validation --tagger v3=artifacts/price_tagger/v3_base3/validation_predictions.jsonl
+python -m evaluation.price_extractor.run --split test --final --tagger v3=artifacts/price_tagger/v3_base3/test_predictions.jsonl
+python -m pytest tests/test_price_eval.py tests/test_resolver_handoff.py
 ```
 
-The ensemble averages token probabilities before decoding money spans. Its models
-must use the same tokenizer, O/B/I label order, and metadata setting. Pass
-`--no-meta` to inference if the models were trained that way. Prepared data,
-training runs, predictions and checkpoint weights stay outside Git. Supply the
-trained model directories through `--models`; this repository does not contain
-the trained RoBERTa weights or establish their reported accuracy.
+The scores above use the published predictions. For training, install the project
+with its NLU and test extras (`python -m pip install -e ".[nlu,test]"`) in an
+environment with CUDA-enabled PyTorch and a GPU suitable for RoBERTa-large.
+The first training run needs the pretrained backbone and tokenizer. The three
+fine-tuned checkpoints are generated locally.
 
-## Scoring
-
+```powershell
+python -m price_tagger.prepare_data --splits train validation test --out price_tagger/data_v3
+foreach ($seed in 0,1,2) {
+    python -m price_tagger.train --data price_tagger/data_v3 --out "runs/s$seed" --model-name roberta-large --lr 2e-5 --ignore-mode negative --single --seed $seed
+}
+foreach ($split in "validation","test") {
+    python -m price_tagger.ensemble --data price_tagger/data_v3 --models runs/s0/model runs/s1/model runs/s2/model --split $split --single --o-scale 2.0 --out runs/ensemble
+}
+python -m evaluation.price_extractor.run --split validation --tagger v3=runs/ensemble/validation_predictions.jsonl
+python -m evaluation.price_extractor.run --split test --final --tagger v3=runs/ensemble/test_predictions.jsonl
 ```
-python -m evaluation.price_extractor.run --split validation --tagger NAME=validation_predictions.jsonl
-```
 
-scores the tagger with the same harness as the original parser and the rules.
+The final run used BIO token classification, role/category/listing metadata, 256
+tokens, no previous utterance, and other money labelled O. Each seed used AdamW,
+batch size 32, four epochs, weight decay 0.01, 6% warm-up, bf16, and best
+validation amount F1 for checkpoint selection. At inference the ensemble averages
+token probabilities, multiplies the O score by 2 before argmax, and normalises
+the best surviving span. See `artifacts/price_eval_test_v3.json` (new_ensemble).
