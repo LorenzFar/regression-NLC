@@ -4,6 +4,8 @@ From repository root:
   python -m scripts.build_gold_jsonl                          # RQ1 + RQ2 -> artifacts/gold.jsonl
   python -m scripts.build_gold_jsonl --rq1-only               # acts/prices only, no RQ2 workbook
   python -m scripts.build_gold_jsonl --output artifacts/gold.jsonl
+  python -m scripts.build_gold_jsonl --extra data/craigslist_test/v3/v3_review.xlsx \
+      --output artifacts/gold_v3.jsonl --challenge-output artifacts/gold_challenge_v3.jsonl   # v2 + reviewed v3
 
 Sources (all in data/craigslist_test/):
   labels_barry.csv   seller act (gold_act) and prices (gold_prices "value:role; ...") - the RQ1 gold set
@@ -74,7 +76,27 @@ def read_sheet(workbook, name):
     return [dict(zip(header, row)) for row in ws.iter_rows(min_row=2, values_only=True) if row[1]]
 
 
-def build(labels_path, dialogues_path, workbook_path=None):
+def read_extra(path, allow_unchecked=False):
+    """v3 workbook (data/craigslist_test/v3/v3_review.xlsx): sheets seller, buyer_turns, challenge; rows need checked = y."""
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(path, read_only=True)
+    sheets = {}
+    for name, key_col in (("seller", "case_id"), ("buyer_turns", "turn_id"), ("challenge", "case_id")):
+        rows = [r for r in read_sheet(workbook, name) if r.get(key_col)]
+        unchecked = [r[key_col] for r in rows if str(r.get("checked") or "").strip().lower() not in ("y", "yes")]
+        if unchecked and not allow_unchecked:
+            raise ValueError(f"{path} sheet {name}: {len(unchecked)} rows not marked checked, e.g. {unchecked[0]}")
+        sheets[name] = rows
+    labels = {r["case_id"]: {"case_id": r["case_id"], "dialogue_index": r["dialogue_index"], "turn": r["turn"],
+                             "message": r["message"], "gold_act": str(r["gold_act"]).strip(),
+                             "gold_prices": str(r["gold_prices"] or "")} for r in sheets["seller"]}
+    seller_rq2 = {r["case_id"]: r for r in sheets["seller"]}
+    buyer = {r["turn_id"]: r for r in sheets["buyer_turns"]}
+    return labels, seller_rq2, buyer, sheets["challenge"]
+
+
+def build(labels_path, dialogues_path, workbook_path=None, extra=None):
     labels = {r["case_id"]: r for r in csv.DictReader(open(labels_path, encoding="utf-8-sig"))}
     dialogues = {d["dialogue_index"]: d for d in map(json.loads, open(dialogues_path, encoding="utf-8"))}
     seller_rq2, buyer = {}, {}
@@ -84,6 +106,14 @@ def build(labels_path, dialogues_path, workbook_path=None):
         workbook = load_workbook(workbook_path, read_only=True)
         seller_rq2 = {r["case_id"]: r for r in read_sheet(workbook, "seller_rq2")}
         buyer = {r["turn_id"]: r for r in read_sheet(workbook, "buyer_turns")}
+    if extra is not None:
+        extra_labels, extra_rq2, extra_buyer = extra[:3]
+        clash = (labels.keys() & extra_labels.keys()) | (buyer.keys() & extra_buyer.keys())
+        if clash:
+            raise ValueError(f"extra workbook repeats existing turns, e.g. {sorted(clash)[0]}")
+        labels.update(extra_labels)
+        seller_rq2.update(extra_rq2)
+        buyer.update(extra_buyer)
 
     def turn_label(dialogue_index, turn):
         cid = f"cb-test-{dialogue_index:04d}-t{turn['turn']}"
@@ -135,13 +165,17 @@ def build(labels_path, dialogues_path, workbook_path=None):
     return rows, unlabelled_history
 
 
-def build_challenge(workbook_path, dialogues_path):
+def build_challenge(workbook_path, dialogues_path, extra_rows=()):
     """Hand-picked RQ2 cases from other test dialogues; history is unlabelled, so replay predicts it."""
     from openpyxl import load_workbook
 
     dialogues = {d["dialogue_index"]: d for d in map(json.loads, open(dialogues_path, encoding="utf-8"))}
+    items = read_sheet(load_workbook(workbook_path, read_only=True), "challenge") + list(extra_rows)
+    ids = [item["case_id"] for item in items]
+    if len(ids) != len(set(ids)):
+        raise ValueError("challenge case_id repeated across workbooks")
     rows = []
-    for item in read_sheet(load_workbook(workbook_path, read_only=True), "challenge"):
+    for item in items:
         cid = item["case_id"]
         act = str(item["act"]).strip()
         if act not in ACTS:
@@ -173,10 +207,14 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, default=Path("artifacts/gold.jsonl"))
     parser.add_argument("--challenge-output", type=Path, default=Path("artifacts/gold_challenge.jsonl"),
                         help="hand-picked RQ2 cases (workbook sheet 'challenge'); kept out of --output")
+    parser.add_argument("--extra", type=Path, help="reviewed v3 workbook (data/craigslist_test/v3/v3_review.xlsx) merged into both outputs")
+    parser.add_argument("--allow-unchecked", action="store_true", help="accept --extra rows not marked checked (dry runs only)")
     args = parser.parse_args(argv)
     try:
-        rows, unlabelled = build(args.labels, args.dialogues, None if args.rq1_only else args.workbook)
-        challenge = [] if args.rq1_only else build_challenge(args.workbook, args.dialogues)
+        extra = None if args.extra is None else read_extra(args.extra, args.allow_unchecked)
+        rows, unlabelled = build(args.labels, args.dialogues, None if args.rq1_only else args.workbook, extra)
+        challenge = [] if args.rq1_only else build_challenge(args.workbook, args.dialogues,
+                                                             extra[3] if extra else ())
     except (OSError, ValueError, KeyError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

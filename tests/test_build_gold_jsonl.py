@@ -43,3 +43,45 @@ def test_build_labels_history_and_limits(tmp_path):
     assert "act" not in last["history"][0]
     assert last["target"] == 75.0 and last["walk_away"] == 75.0  # 0.9 x 80 = 72, raised to the target
     assert "deal_agreed" not in last
+
+
+def _extra_workbook(path, checked):
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    wb.remove(wb.active)
+    seller = wb.create_sheet("seller")
+    seller.append(["checked", "case_id", "message", "gold_act", "gold_prices", "deal_agreed",
+                   "needs_clarification", "challenge", "dialogue_index", "turn"])
+    seller.append([checked, "cb-test-0002-t1", "90", "propose", "90:new_offer", False, False, None, 2, 1])
+    buyer = wb.create_sheet("buyer_turns")
+    buyer.append(["checked", "turn_id", "act", "price", "dialogue_index", "turn"])
+    buyer.append([checked, "cb-test-0002-t0", "inquire", None, 2, 0])
+    challenge = wb.create_sheet("challenge")
+    challenge.append(["checked", "case_id", "act", "price"])
+    wb.save(path)
+
+
+def test_extra_workbook_needs_checked_rows_and_merges(tmp_path):
+    import pytest
+    from scripts.build_gold_jsonl import read_extra
+
+    labels = tmp_path / "labels.csv"
+    labels.write_text("case_id,dialogue_index,turn,message,gold_act,gold_prices\n", encoding="utf-8")
+    dialogues = tmp_path / "dialogues.jsonl"
+    dialogues.write_text(json.dumps({
+        "dialogue_index": 2, "list_price": 100.0, "buyer_target": 80.0,
+        "turns": [{"turn": 0, "speaker": "buyer", "text": "price?"},
+                  {"turn": 1, "speaker": "seller", "text": "90"}]}) + "\n", encoding="utf-8")
+
+    unchecked = tmp_path / "unchecked.xlsx"
+    _extra_workbook(unchecked, "")
+    with pytest.raises(ValueError, match="not marked checked"):
+        read_extra(unchecked)
+
+    checked = tmp_path / "checked.xlsx"
+    _extra_workbook(checked, "y")
+    rows, unlabelled = build(labels, dialogues, extra=read_extra(checked))
+    assert unlabelled == 0
+    assert rows[0]["act"] == "propose" and rows[0]["price"] == "90"
+    assert rows[0]["history"] == [{"speaker": "buyer", "text": "price?", "act": "inquire"}]
