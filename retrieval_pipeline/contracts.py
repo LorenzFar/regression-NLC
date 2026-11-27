@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 PRICE_ACTIONS = {"propose", "counter", "accept", "confirm"}
-ACTIONS = PRICE_ACTIONS | {"reject", "clarify"}
+ACTIONS = PRICE_ACTIONS | {"reject", "clarify", "answer"}
 
 
 class ContractError(ValueError):
@@ -36,6 +36,7 @@ class PolicyDecision:
     clarification_reason: str | None = None
     finished: bool = False
     offer_context: OfferContext | None = None
+    answer_type: str | None = None
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,18 @@ def validate_generation_request(decision: PolicyDecision, history: list[Turn], m
     if decision.price is not None or decision.action in PRICE_ACTIONS:
         if not isinstance(decision.price, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]{1,2})?", decision.price):
             raise ContractError("price must be a non-negative SGD decimal string with at most two fractional digits")
+    if decision.action == "answer":
+        if not isinstance(decision.answer_type, str) or decision.answer_type not in {
+            "current_offer", "interest", "hold_price", "redirect", "no_agreement",
+            "accepted_offer", "arrangement", "accepted_arrangement",
+        }:
+            raise ContractError("answer requires a supported answer_type")
+        if decision.answer_type != "redirect" and decision.price is None:
+            raise ContractError("priced answer requires the current price")
+        if decision.referenced_offer_id is not None or decision.finished:
+            raise ContractError("answer cannot reference an offer or finish a session")
+    elif decision.answer_type is not None:
+        raise ContractError("answer_type is only supported for answer")
     reference = decision.referenced_offer_id
     if reference is not None and (not isinstance(reference, str) or not reference.strip()):
         raise ContractError("referenced_offer_id must be a nonblank string")

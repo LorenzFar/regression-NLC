@@ -44,6 +44,24 @@ class RetrievalGenerator:
         omitting it can still retrieve ordinary wording without reparsing text.
         """
         validate_generation_request(decision, history, message)
+        if decision.action == "answer":
+            templates = {
+                "current_offer": "My current offer is {price}.",
+                "interest": "Yes, I’m interested. My current offer is {price}.",
+                "hold_price": "My current offer is {price}. What price would work for you?",
+                "redirect": ("Let’s focus on the price. My current offer is {price}."
+                             if decision.price is not None else
+                             "Let’s focus on the price. What price would you accept?"),
+                "no_agreement": "We haven’t agreed yet. My current offer is {price}.",
+                "accepted_offer": "I’ve accepted {price}. Please confirm if that works for you.",
+                "arrangement": "I only negotiate price, not collection or delivery arrangements. My current offer is {price}.",
+                "accepted_arrangement": "I only negotiate price, not collection or delivery arrangements. I’ve accepted {price}. Please confirm if that works for you.",
+            }
+            return GenerationResult(
+                text=templates[decision.answer_type].format(price=_display(decision.price)),
+                action="answer", price=decision.price,
+                template_id=f"fixed.answer.{decision.answer_type}", source="fallback",
+            )
         if decision.action == "clarify":
             generic = {
                 "low_confidence": "Could you clarify what you mean?",

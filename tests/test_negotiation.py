@@ -334,7 +334,7 @@ def test_firm_price_above_walk_away_is_rejected_once_there_is_no_room_left():
 @pytest.mark.parametrize("act", ["inquire", "vague"])
 def test_buyer_does_not_concede_to_a_question_or_vague_message(act):
     results, _ = talk(say("propose", "120"), say(act), say(act))
-    follow_up = ("clarify", None) if act == "vague" else ("counter", "80.00")
+    follow_up = ("clarify", None) if act == "vague" else ("answer", "80.00")
     assert moves(results) == [("counter", "80.00"), follow_up, follow_up]
 
 
@@ -343,21 +343,21 @@ def test_seller_rejection_without_a_price_earns_one_concession_step():
     assert moves(results) == [("counter", "80.00"), ("counter", "100.00"), ("reject", None)]
 
 
-def test_buyer_opens_at_target_when_no_seller_price_exists():
-    assert moves(talk(say("inquire"))[0]) == [("propose", "80.00")]
-    assert moves(talk(say("vague"), say("inquire"))[0]) == [("clarify", None), ("propose", "80.00")]
+def test_inquiry_without_a_current_offer_redirects_without_opening():
+    assert moves(talk(say("inquire"))[0]) == [("answer", None)]
+    assert moves(talk(say("vague"), say("inquire"))[0]) == [("clarify", None), ("answer", None)]
 
 
-def test_restated_offer_never_exceeds_the_seller_price_on_record():
+def test_inquiry_does_not_create_an_offer_from_an_old_seller_price():
     state = {"offers": [offer("seller-1", "seller", "70.00", "superseded")], "agreement": "none"}
-    assert moves(talk(say("inquire"), state=state)[0]) == [("counter", "70.00")]
+    assert moves(talk(say("inquire"), state=state)[0]) == [("answer", None)]
 
 
 def test_question_after_acceptance_keeps_the_deal_and_it_can_still_close():
     results, snapshot = talk(say("propose", "70"), say("inquire"), say("vague"), say("accept"))
-    assert moves(results) == [("accept", "70.00"), ("accept", "70.00"), ("clarify", None),
+    assert moves(results) == [("accept", "70.00"), ("answer", "70.00"), ("clarify", None),
                               ("confirm", "70.00")]
-    assert [result.trace["policy"]["referenced_offer_id"] for result in results] == ["seller-1", "seller-1", None, "seller-1"]
+    assert [result.trace["policy"]["referenced_offer_id"] for result in results] == ["seller-1", None, None, "seller-1"]
     assert [item["id"] for item in snapshot.state["offers"]] == ["seller-1"]
     assert snapshot.state["agreement"] == "confirmed" and snapshot.finished
 
@@ -441,10 +441,13 @@ def test_invariants_hold_for_any_sequence_of_seller_turns(seed, mode):
     session = Session("random")
     limit = float(walk_away)
     for message in script.turns:
+        before = session.snapshot().state
         result = pipeline.turn(session, message, case_id=message, turn_id=message)
         decision, snapshot = result.trace["policy"], session.snapshot()
         state = snapshot.state
-        if decision["action"] != "clarify":
+        if decision["action"] == "answer":
+            assert state == before
+        if decision["action"] not in {"clarify", "answer"}:
             lives = live(snapshot)
             assert len(lives) <= 1
             assert state["agreement"] in {"none", "pending", "confirmed"}

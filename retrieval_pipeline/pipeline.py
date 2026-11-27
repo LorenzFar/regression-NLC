@@ -198,6 +198,10 @@ class Pipeline:
                 or transition.finished or decision.finished
             ):
                 raise ContractError("clarification cannot commit disputed state or finish a session")
+            if decision.action == "answer" and (
+                transition.state != before.state or transition.finished or decision.finished
+            ):
+                raise ContractError("answer cannot change tracker state or finish a session")
             after = Snapshot(
                 before.history + (Turn("seller", message), Turn("buyer", generation.text)),
                 deepcopy(transition.state), transition.finished,
