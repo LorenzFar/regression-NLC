@@ -20,7 +20,7 @@ from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTok
 ACTS = ["propose", "counter", "accept", "reject", "inquire", "vague"]
 MAX_LEN = 192
 BASE_MODEL = "distilbert-base-uncased"
-DEFAULT_CKPT = str(Path(__file__).resolve().parent / "nlu_out" / "nlu_k3_s1.pt")
+DEFAULT_CKPT = str(Path(__file__).resolve().parent / "models" / "nlu_k3_s1.pt")
 
 # Identical to training; do not extend without retraining.
 _NUM_WORDS = (r"(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|"
