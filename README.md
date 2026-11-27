@@ -29,6 +29,8 @@ $env:HF_HUB_OFFLINE = "1"   # after the DistilBERT tokenizer is cached once
 
 `--scripted-nlu` swaps in a keyword stand-in (labelled in the header) when torch or the checkpoint is unavailable. `--bank PATH` picks another response bank.
 
+A hosted version runs at https://huggingface.co/spaces/jeongjiong/cs425-negotiation-demo. It is a Gradio wrapper (`hf_space/`) around the same `build_agent` pipeline and k3_s1 checkpoint; see `hf_space/README.md` for the files it stages.
+
 ### Demo conversations
 
 Use the **City road bike** preset: listing **300**, target **240**, walk-away **280**, concession fraction **0.5**, gate **Full**, confidence threshold **0.7**. Start a **new negotiation for each scenario**. The buyer opens at 240. Send each seller message separately and wait for the reply.
@@ -48,19 +50,19 @@ Explain: the buyer negotiates first, accepts the repeated price within budget, a
 
 #### 2. Clarify a price mismatch, then an unresolved reference
 
-Run all five messages in the same fresh negotiation. This complete sequence was checked with k3_s1 through `DemoApp`.
+Run all five messages in the same fresh negotiation. This complete sequence was checked with k3_s1 on the hosted demo.
 
 | Seller message | Buyer response | Rule or state to show |
 |---|---|---|
-| `I agree to 300.` | “Are you asking for 300?” | **Price mismatch:** 300 does not match the buyer's 240 offer. Offers stay unchanged. |
-| `yes` | Counter 270 | Treat 300 as the seller's asking price and resume negotiation. |
-| `I agree to the other price` | “Which offer are you referring to?” | **Unresolved reference:** do not guess what “the other price” means. Offers stay unchanged. |
-| `I mean 240.` | Accept 240 | Use the explicit seller price. Agreement becomes pending. |
-| `Okay, deal.` | Confirm 240 | Agreement becomes confirmed and the session finishes. |
+| `I can agree to 280.` | “Are you asking for 280?” | **Price mismatch and state conflict:** agreement wording names 280, which does not match the buyer's 240 offer. Offers stay unchanged. |
+| `yes` | Counter 260 | `ClarificationFollowUp` treats 280 as the seller's asking price; the policy then counters. |
+| `Okay, I agree to the other price.` | “Which offer are you referring to?” | **Unresolved reference:** 280 and 260 are both on the table, so the buyer does not guess. Offers stay unchanged. |
+| `I mean 260.` | Accept 260 | Use the explicit seller price. Agreement becomes pending. |
+| `Okay, deal.` | Confirm 260 | Agreement becomes confirmed and the session finishes. |
 
-Explain: first the gate checks a stated price that conflicts with the current offer. Later it asks which price an ambiguous reference means. Both clarifications preserve offers and agreement; explicit follow-ups let negotiation continue. The `I mean 240.` turn is handled as a seller price that the buyer accepts, not as automatic confirmation of an old offer.
+Explain: first the gate checks a stated price that conflicts with the current offer. Later it asks which price an ambiguous reference means. Both clarifications preserve offers and agreement; explicit follow-ups let negotiation continue. The `I mean 260.` turn is handled as a seller price that the buyer accepts, not as automatic confirmation of an old offer.
 
-Use this exact wording: with k3_s1, `Deal at 300` was recognised as a counterproposal and countered at 270 without clarification.
+Use this exact wording; paraphrases can change the NLU prediction.
 
 For a shorter general-clarification example, start fresh: `That could work.` → “Could you clarify what you mean?”; then `I accept your offer.` → confirm 240.
 

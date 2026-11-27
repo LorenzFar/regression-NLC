@@ -1,0 +1,5 @@
+# Gradio is set in README.md; the Space provides spaces and huggingface_hub.
+# 2.13.0 is supported by ZeroGPU, independently of the local demo's torch pin.
+torch==2.13.0
+transformers==5.20.2
+scikit-learn==1.9.1
