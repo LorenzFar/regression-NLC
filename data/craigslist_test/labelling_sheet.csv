@@ -1,0 +1,570 @@
+﻿case_id,dialogue_index,turn,category,item,list_price,context,message,gold_act,gold_prices,annotator,notes
+cb-test-0048-t1,48,1,furniture,Four piece bedroom dressers and drawers and headboard,400.0,"BUYER: Hi there, I am interested but have a few questions.",What questions do you have?,,,,
+cb-test-0048-t3,48,3,furniture,Four piece bedroom dressers and drawers and headboard,400.0,"BUYER: Hi there, I am interested but have a few questions.
+SELLER: What questions do you have?
+BUYER: Are there any scratches or knicks I SHOUDL BEAWARE OF?",There is one small scratch that happened the last time I moved.,,,,
+cb-test-0048-t5,48,5,furniture,Four piece bedroom dressers and drawers and headboard,400.0,"BUYER: Are there any scratches or knicks I SHOUDL BEAWARE OF?
+SELLER: There is one small scratch that happened the last time I moved.
+BUYER: Where is that located ? Is it visible?",If you have it against a wall you can't see it as it is on the back at the bottom,,,,
+cb-test-0048-t7,48,7,furniture,Four piece bedroom dressers and drawers and headboard,400.0,"BUYER: Where is that located ? Is it visible?
+SELLER: If you have it against a wall you can't see it as it is on the back at the bottom
+BUYER: great, also I was wondering if you smoke?",I do not and nobody in my household does.,,,,
+cb-test-0048-t9,48,9,furniture,Four piece bedroom dressers and drawers and headboard,400.0,"BUYER: great, also I was wondering if you smoke?
+SELLER: I do not and nobody in my household does.
+BUYER: In that case I would love to make a deal. I was hoping you woudl accept $250?",That's not quite enough for this. I would possibly be able to get down to 300 if that would work for you.,,,,
+cb-test-0052-t1,52,1,electronics,Vintage Advent Heritage tower speakers,100.0,BUYER: I'm intereseted in these speakers. How much are you asking for them?,i will sell it for 100,,,,
+cb-test-0052-t3,52,3,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: I'm intereseted in these speakers. How much are you asking for them?
+SELLER: i will sell it for 100
+BUYER: Have they been used or checked to see if they're in working order?",i checked every thing. it works fine and sound was amazing,,,,
+cb-test-0052-t5,52,5,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: Have they been used or checked to see if they're in working order?
+SELLER: i checked every thing. it works fine and sound was amazing
+BUYER: How about $70? Would you do $70?",i have take care of your shipping too how about 85. i will delivery it to your address,,,,
+cb-test-0052-t8,52,8,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: How about $70? Would you do $70?
+SELLER: i have take care of your shipping too how about 85. i will delivery it to your address
+BUYER: Ooo, that is a decent offer. I'd agree to that.",when will i get paid,,,,
+cb-test-0052-t10,52,10,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: Ooo, that is a decent offer. I'd agree to that.
+SELLER: when will i get paid
+BUYER: Payment before item ships is standard.",deal,,,,
+cb-test-0059-t1,59,1,car,2016 Chevy Sonic LTZ,10999.0,BUYER: I'm really interested in this.  Are you the original owner?  I have 5000 cash I can give you tomorrow.,"I have to stick to the 10999, but I can throw in a tank of gas and 1 year of sirius xm radio service (I will prepay for it)",,,,
+cb-test-0059-t3,59,3,car,2016 Chevy Sonic LTZ,10999.0,"BUYER: I'm really interested in this.  Are you the original owner?  I have 5000 cash I can give you tomorrow.
+SELLER: I have to stick to the 10999, but I can throw in a tank of gas and 1 year of sirius xm radio service (I will prepay for it)
+BUYER: I can't come up with that much money.  Would you consider 6500 with none of the extras?",I can make 10000 work without the extras,,,,
+cb-test-0059-t5,59,5,car,2016 Chevy Sonic LTZ,10999.0,"BUYER: I can't come up with that much money.  Would you consider 6500 with none of the extras?
+SELLER: I can make 10000 work without the extras
+BUYER: I just can't afford that.  Are the tires new?  Is there a sunroof?  If yes, I will come up with 7500 tops.  That is a deal or no deal price for me.",I can't do that.  But based on the year your local credit union would issue you a small loan for the balance.  It is new enough to still qualify for new car rates.,,,,
+cb-test-0059-t7,59,7,car,2016 Chevy Sonic LTZ,10999.0,"BUYER: I just can't afford that.  Are the tires new?  Is there a sunroof?  If yes, I will come up with 7500 tops.  That is a deal or no deal price for me.
+SELLER: I can't do that.  But based on the year your local credit union would issue you a small loan for the balance.  It is new enough to still qualify for new car rates.
+BUYER: True.  I really want the car.  If it has low mileage, a sunroof and new tires, would you take 9000?",If you come up to 9500 we have a deal.,,,,
+cb-test-0059-t9,59,9,car,2016 Chevy Sonic LTZ,10999.0,"BUYER: True.  I really want the car.  If it has low mileage, a sunroof and new tires, would you take 9000?
+SELLER: If you come up to 9500 we have a deal.
+BUYER: I can't.  I've reached my upper limit.",Will it be cash in hand if I say yes?,,,,
+cb-test-0059-t11,59,11,car,2016 Chevy Sonic LTZ,10999.0,"BUYER: I can't.  I've reached my upper limit.
+SELLER: Will it be cash in hand if I say yes?
+BUYER: Yes.  We can meet tomorrow.",Ok then we have a deal,,,,
+cb-test-0061-t1,61,1,housing,Parker Apartments - Now Accepting Below Market Rate Applications,979.0,BUYER: I have an interest in this apartment.,"Thats great to hear, would you like to come in for a little preview or have you seen everything you need to?",,,,
+cb-test-0061-t3,61,3,housing,Parker Apartments - Now Accepting Below Market Rate Applications,979.0,"BUYER: I have an interest in this apartment.
+SELLER: Thats great to hear, would you like to come in for a little preview or have you seen everything you need to?
+BUYER: I need to move in right away, as my current lease is running out. I would love to make a deal today.",Okay sounds great! Would you be willing to pay the listed price of $979?,,,,
+cb-test-0061-t5,61,5,housing,Parker Apartments - Now Accepting Below Market Rate Applications,979.0,"BUYER: I need to move in right away, as my current lease is running out. I would love to make a deal today.
+SELLER: Okay sounds great! Would you be willing to pay the listed price of $979?
+BUYER: I would love to negotiate a lower price, as the other apartment that I am looking at is priced at 700. This one looks much better though. Could you take a lower price?","This is a rather premium apartment, how about i waive the safety deposit for a month and move to 750?",,,,
+cb-test-0063-t1,63,1,furniture,Couch and love seat,80.0,BUYER: How much for the couch?,I'm selling this for $80.,,,,
+cb-test-0063-t3,63,3,furniture,Couch and love seat,80.0,"BUYER: How much for the couch?
+SELLER: I'm selling this for $80.
+BUYER: Will you take a lower price if I pick it up?",If you are able to pick it up yourself then I would drop it to $70,,,,
+cb-test-0091-t1,91,1,bike,Fit Bike VH2,200.0,"BUYER: Hi, I am interested in the bike you have for sale, can you tell me a bit about it...","It's a 20.75 inch top tube Fit Bike VH2. Very good condition, no rust, but does have a few scratches from use.",,,,
+cb-test-0091-t3,91,3,bike,Fit Bike VH2,200.0,"BUYER: Hi, I am interested in the bike you have for sale, can you tell me a bit about it...
+SELLER: It's a 20.75 inch top tube Fit Bike VH2. Very good condition, no rust, but does have a few scratches from use.
+BUYER: How old is it?",It's a year old. Bought it brand new last July,,,,
+cb-test-0091-t5,91,5,bike,Fit Bike VH2,200.0,"BUYER: How old is it?
+SELLER: It's a year old. Bought it brand new last July
+BUYER: That all sounds pretty good, would you be willing to negotiate on the price, I can pick it up in person if that helps...","I'm asking $250 for the bike, and pick up would be ideal",,,,
+cb-test-0091-t7,91,7,bike,Fit Bike VH2,200.0,"BUYER: That all sounds pretty good, would you be willing to negotiate on the price, I can pick it up in person if that helps...
+SELLER: I'm asking $250 for the bike, and pick up would be ideal
+BUYER: Hmmm the list price says 200, and I was hoping to get it for less than that...",I can go down to $175,,,,
+cb-test-0091-t9,91,9,bike,Fit Bike VH2,200.0,"BUYER: Hmmm the list price says 200, and I was hoping to get it for less than that...
+SELLER: I can go down to $175
+BUYER: I was thinking closer to 150 would be more fair...",How about $160?,,,,
+cb-test-0097-t1,97,1,car,2000 Volvo V70 XC,3000.0,BUYER: Hello.  Nice car,"Thanks, I took good care of it.",,,,
+cb-test-0097-t3,97,3,car,2000 Volvo V70 XC,3000.0,"BUYER: Hello.  Nice car
+SELLER: Thanks, I took good care of it.
+BUYER: So what about the maintainence history?  ANything I should know about?",It's a clean title.,,,,
+cb-test-0097-t5,97,5,car,2000 Volvo V70 XC,3000.0,"BUYER: So what about the maintainence history?  ANything I should know about?
+SELLER: It's a clean title.
+BUYER: No mechanical problems ever?  What's the mileage?",50K miles,,,,
+cb-test-0097-t7,97,7,car,2000 Volvo V70 XC,3000.0,"BUYER: No mechanical problems ever?  What's the mileage?
+SELLER: 50K miles
+BUYER: For only $3000? Really?","Yes, are you interested?",,,,
+cb-test-0097-t9,97,9,car,2000 Volvo V70 XC,3000.0,"BUYER: For only $3000? Really?
+SELLER: Yes, are you interested?
+BUYER: yes, for $2500","Sorry, I already have a few offers at $2900. I am going as low as I can.",,,,
+cb-test-0103-t1,103,1,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,BUYER: Hello!,hello I am selling my cabinet,,,,
+cb-test-0103-t3,103,3,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: Hello!
+SELLER: hello I am selling my cabinet
+BUYER: It is a beautiful cabinet and I am interested in buying it.",its one of my favorites and although it has a few flaws I am asking $300 for it,,,,
+cb-test-0103-t5,103,5,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: It is a beautiful cabinet and I am interested in buying it.
+SELLER: its one of my favorites and although it has a few flaws I am asking $300 for it
+BUYER: That seems a little high for me.  I would like to offer you $150 for it.",that is somewhat low how about $245,,,,
+cb-test-0103-t7,103,7,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: That seems a little high for me.  I would like to offer you $150 for it.
+SELLER: that is somewhat low how about $245
+BUYER: I'm afraid I can't go any lower than $200.",I can meet you at $225,,,,
+cb-test-0103-t9,103,9,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: I'm afraid I can't go any lower than $200.
+SELLER: I can meet you at $225
+BUYER: How about $210 and I will come pick up the piece myself?",Alright I agree to $210,,,,
+cb-test-0190-t1,190,1,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: Hi, have you tested these speakers recently?",I have not but my grandfather used them all the time up until he died and they worked and sounded great.,,,,
+cb-test-0190-t3,190,3,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: Hi, have you tested these speakers recently?
+SELLER: I have not but my grandfather used them all the time up until he died and they worked and sounded great.
+BUYER: It says in the ad that your grandfather passed away ""a couple of years ago."" I'm sorry for your loss by the way. I want vintage but I want vintage that works. How about I pay 75, and I'll take them as is, no questions asked.",75 sounds good. You can test them out for yourself. I am sure that they still work fine.,,,,
+cb-test-0190-t6,190,6,electronics,Vintage Advent Heritage tower speakers,100.0,"BUYER: It says in the ad that your grandfather passed away ""a couple of years ago."" I'm sorry for your loss by the way. I want vintage but I want vintage that works. How about I pay 75, and I'll take them as is, no questions asked.
+SELLER: 75 sounds good. You can test them out for yourself. I am sure that they still work fine.
+BUYER: We have a deal",Great!,,,,
+cb-test-0192-t1,192,1,furniture,COOL -- OCCASIONAL BLUE GLASS TABLE --,149.0,BUYER: cool table,yeah.....sure.......is.......,,,,
+cb-test-0192-t3,192,3,furniture,COOL -- OCCASIONAL BLUE GLASS TABLE --,149.0,"BUYER: cool table
+SELLER: yeah.....sure.......is.......
+BUYER: how old is it",not very only a year,,,,
+cb-test-0192-t5,192,5,furniture,COOL -- OCCASIONAL BLUE GLASS TABLE --,149.0,"BUYER: how old is it
+SELLER: not very only a year
+BUYER: i'll offer you $120",139 and you got a deal,,,,
+cb-test-0192-t7,192,7,furniture,COOL -- OCCASIONAL BLUE GLASS TABLE --,149.0,"BUYER: i'll offer you $120
+SELLER: 139 and you got a deal
+BUYER: i can get you 125 right now in like 29min",i can deliver it personally after purchase for 139,,,,
+cb-test-0192-t10,192,10,furniture,COOL -- OCCASIONAL BLUE GLASS TABLE --,149.0,"BUYER: i can get you 125 right now in like 29min
+SELLER: i can deliver it personally after purchase for 139
+BUYER: ok since your kind enough to use your gas that works for me",great,,,,
+cb-test-0199-t0,199,0,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,,Hello,,,,
+cb-test-0199-t2,199,2,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"SELLER: Hello
+BUYER: Hi, I am intersted in your cabinet. Does it have scratches?",The only real defects are a ring on the top from a glass or vase.,,,,
+cb-test-0199-t4,199,4,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: Hi, I am intersted in your cabinet. Does it have scratches?
+SELLER: The only real defects are a ring on the top from a glass or vase.
+BUYER: How many drawers does it have?",There is a top and bottom cabinet as well as a hidden drawer in the top part.,,,,
+cb-test-0199-t6,199,6,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: How many drawers does it have?
+SELLER: There is a top and bottom cabinet as well as a hidden drawer in the top part.
+BUYER: Are you negotiable on the price?",Sure. You have one in mind?,,,,
+cb-test-0199-t8,199,8,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: Are you negotiable on the price?
+SELLER: Sure. You have one in mind?
+BUYER: $200.00",I'll do $250 if you pay cash and can get it today.,,,,
+cb-test-0199-t10,199,10,furniture,"Beautiful Unique Beijing Cabinet - removable door, hidden drawer",300.0,"BUYER: $200.00
+SELLER: I'll do $250 if you pay cash and can get it today.
+BUYER: I could give you $225 and pick it up in about an hour.",That sounds good.,,,,
+cb-test-0207-t1,207,1,bike,2009 Motobecane FLY Pro Hardtail MTB,800.0,BUYER: Hello,"Hi. I would love to get rid of this bike soon. It is 800 and a great price, seeing that it cost much more when it was originally purchased.",,,,
+cb-test-0207-t3,207,3,bike,2009 Motobecane FLY Pro Hardtail MTB,800.0,"BUYER: Hello
+SELLER: Hi. I would love to get rid of this bike soon. It is 800 and a great price, seeing that it cost much more when it was originally purchased.
+BUYER: I'm looking at getting this for my son for his birthday. Can you tell me if there is anything wrong with the bike?","There is nothing wrong with the bike. I'm only selling it because I had surgery, gained weight, and am too big for the bike. I think your son will love it! I only rode it twice, making it like new.",,,,
+cb-test-0207-t5,207,5,bike,2009 Motobecane FLY Pro Hardtail MTB,800.0,"BUYER: I'm looking at getting this for my son for his birthday. Can you tell me if there is anything wrong with the bike?
+SELLER: There is nothing wrong with the bike. I'm only selling it because I had surgery, gained weight, and am too big for the bike. I think your son will love it! I only rode it twice, making it like new.
+BUYER: Did anyone own it before you?",I am the only owner. I would like to sell it for $800. How does that price sound to you?,,,,
+cb-test-0207-t7,207,7,bike,2009 Motobecane FLY Pro Hardtail MTB,800.0,"BUYER: Did anyone own it before you?
+SELLER: I am the only owner. I would like to sell it for $800. How does that price sound to you?
+BUYER: I was hoping closer to $600. Is there any room to work?","Of course! I want your son to have it and for you to get a great price on it. Since I want 800 and you want 600, let's meet in the middle at 700. I'll even include a bid red bow and brand new helmet for your son!",,,,
+cb-test-0207-t9,207,9,bike,2009 Motobecane FLY Pro Hardtail MTB,800.0,"BUYER: I was hoping closer to $600. Is there any room to work?
+SELLER: Of course! I want your son to have it and for you to get a great price on it. Since I want 800 and you want 600, let's meet in the middle at 700. I'll even include a bid red bow and brand new helmet for your son!
+BUYER: He'll appreciate the bow. You throw in a new pair of tires with the helmet and ill do $700.","For new tires, I'd have to do 725. $725 includes new tires, a helmet, and a red bow. Is that a deal? If so, please make an offer.",,,,
+cb-test-0228-t0,228,0,housing,"$1,000 off Move in Special!",1583.0,,Hello there! Any questions about the apartment?,,,,
+cb-test-0228-t2,228,2,housing,"$1,000 off Move in Special!",1583.0,"SELLER: Hello there! Any questions about the apartment?
+BUYER: Can parking be included instead of additional?",I think we can include parking with the rent price. The overall price is negotiable as well.,,,,
+cb-test-0228-t4,228,4,housing,"$1,000 off Move in Special!",1583.0,"BUYER: Can parking be included instead of additional?
+SELLER: I think we can include parking with the rent price. The overall price is negotiable as well.
+BUYER: Well the place is fairly bare, I'd like to offer $1200, which is under but I'd be willing to pay a 1 month security deposit as long as it's refundable.",That does sound like a good deal. I can accept $1200.,,,,
+cb-test-0231-t1,231,1,furniture,Twin-Sized Futon Chair,100.0,BUYER: Good morning!  I'm interested in your futon chair.  Is it still available?,Yes! Do you have any questions about my chair?,,,,
+cb-test-0231-t3,231,3,furniture,Twin-Sized Futon Chair,100.0,"BUYER: Good morning!  I'm interested in your futon chair.  Is it still available?
+SELLER: Yes! Do you have any questions about my chair?
+BUYER: Any issues?  Tears, stains?","Nope, none at all. It's in excellent condition. I am a bit lazy and used it to mostly just hang clean, dry laundry.",,,,
+cb-test-0231-t5,231,5,furniture,Twin-Sized Futon Chair,100.0,"BUYER: Any issues?  Tears, stains?
+SELLER: Nope, none at all. It's in excellent condition. I am a bit lazy and used it to mostly just hang clean, dry laundry.
+BUYER: Haha...I do the same thing with my treadmill.  I see you're asking $100.  Would you accept $90 if I came and picked it up?",Absolutely! I'm just thankful to get rid of it and free up space!,,,,
+cb-test-0299-t1,299,1,electronics,Garmin Nuvi 265 WT,20.0,"BUYER: hi, i like this but I only $15 to spend, do you have any room to come down?","Hi There! Are you interested in buying.  I originally paid about $100 for this device, so this is a great buy at $20. I'll sell it for $18 though. Deal?",,,,
+cb-test-0299-t3,299,3,electronics,Garmin Nuvi 265 WT,20.0,"BUYER: hi, i like this but I only $15 to spend, do you have any room to come down?
+SELLER: Hi There! Are you interested in buying.  I originally paid about $100 for this device, so this is a great buy at $20. I'll sell it for $18 though. Deal?
+BUYER: well, i guess i can find a couple more dollars for it...$18 is good....thanks",Perfect and thanks!,,,,
+cb-test-0333-t0,333,0,bike,UPGRADED Superfly 9.7,1500.0,,Hello,,,,
+cb-test-0333-t2,333,2,bike,UPGRADED Superfly 9.7,1500.0,"SELLER: Hello
+BUYER: Hello, are you here for the Trek bike? it's my old bike but it works like new",I have one I am selling.,,,,
+cb-test-0333-t4,333,4,bike,UPGRADED Superfly 9.7,1500.0,"BUYER: Hello, are you here for the Trek bike? it's my old bike but it works like new
+SELLER: I have one I am selling.
+BUYER: oh sorry, I am the buyer! Would you accept  $1000? I can come by today!","it has many new gadgets on it including tires and brakes, so I would not go any lower than $1200",,,,
+cb-test-0333-t6,333,6,bike,UPGRADED Superfly 9.7,1500.0,"BUYER: oh sorry, I am the buyer! Would you accept  $1000? I can come by today!
+SELLER: it has many new gadgets on it including tires and brakes, so I would not go any lower than $1200
+BUYER: Can you do $1100 if I pay cash? I am just a poor college student!","That depends on the school! haha! Ok, I will cut you some slack.",,,,
+cb-test-0335-t0,335,0,bike,EXTREMER CRUISER BIKE!!,250.0,,Hi how are you,,,,
+cb-test-0335-t2,335,2,bike,EXTREMER CRUISER BIKE!!,250.0,"SELLER: Hi how are you
+BUYER: I am great thanks! I like your bike!",It is a wonderful bike I'm moving and will be commuting by subway so i need to get rid of it. Do you have any questions?,,,,
+cb-test-0335-t4,335,4,bike,EXTREMER CRUISER BIKE!!,250.0,"BUYER: I am great thanks! I like your bike!
+SELLER: It is a wonderful bike I'm moving and will be commuting by subway so i need to get rid of it. Do you have any questions?
+BUYER: I was hoping I could offer $125 for it. How old is it, and are there any flaws I need to know about your bike.",No no flaws whatsoever i would be willing to go to 150 for it as i need to be rid of it soon but i pains me to do so as it is an excellent bike.,,,,
+cb-test-0354-t1,354,1,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: hi, is the house still available?",It sure is. Were you looking to buy it?,,,,
+cb-test-0354-t3,354,3,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: hi, is the house still available?
+SELLER: It sure is. Were you looking to buy it?
+BUYER: I'd like to lease it for about 6 mos. to a year.  We just moved to this area and are looking for a nice house to rent.","Well look no further, This home will be ready June 12th at a very fair price!",,,,
+cb-test-0354-t5,354,5,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: I'd like to lease it for about 6 mos. to a year.  We just moved to this area and are looking for a nice house to rent.
+SELLER: Well look no further, This home will be ready June 12th at a very fair price!
+BUYER: Are there appliances and are the utilities included in the price?","The appliances are not included, but all utilities are included in rent.",,,,
+cb-test-0354-t7,354,7,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: Are there appliances and are the utilities included in the price?
+SELLER: The appliances are not included, but all utilities are included in rent.
+BUYER: hmmm...that's an expense I was not counting on.  What do you call a fair price?","$4000 Is the asking price, I can assure you it is worth well over that.",,,,
+cb-test-0354-t9,354,9,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: hmmm...that's an expense I was not counting on.  What do you call a fair price?
+SELLER: $4000 Is the asking price, I can assure you it is worth well over that.
+BUYER: I think 4000 is a little high for a house with no appliances.  I was looking more at 2200",The work we have put into the house is worth alot more than the asking price as is... I suppose I could agree to have appliances installed for you if you are willing to give me at least $3500,,,,
+cb-test-0354-t11,354,11,housing,"FURNISHED BERKELEY HOUSE - 3 BEDROOMS, 1 BATH",4000.0,"BUYER: I think 4000 is a little high for a house with no appliances.  I was looking more at 2200
+SELLER: The work we have put into the house is worth alot more than the asking price as is... I suppose I could agree to have appliances installed for you if you are willing to give me at least $3500
+BUYER: Now you're talking.  I think we have a deal!",Great! I'll be happy to see you in your new home!,,,,
+cb-test-0373-t0,373,0,furniture,***Price Reduced*** Macy's Modern Concepts Sectional Couch with Chaise,700.0,,I have a great deal! 700 and it's yours!,,,,
+cb-test-0373-t2,373,2,furniture,***Price Reduced*** Macy's Modern Concepts Sectional Couch with Chaise,700.0,"SELLER: I have a great deal! 700 and it's yours!
+BUYER: I noticed this is from 2010. Would you nor willing to take 550?","I wish i could, but it's pretty much brand new. How about 650?",,,,
+cb-test-0373-t4,373,4,furniture,***Price Reduced*** Macy's Modern Concepts Sectional Couch with Chaise,700.0,"BUYER: I noticed this is from 2010. Would you nor willing to take 550?
+SELLER: I wish i could, but it's pretty much brand new. How about 650?
+BUYER: I have 630 to spend. I can pickup today.",630 it is,,,,
+cb-test-0381-t2,381,2,electronics,Alarm clock Radio,12.0,BUYER: What is the lowest you can sell the phone for?,Can you do $10?,,,,
+cb-test-0381-t4,381,4,electronics,Alarm clock Radio,12.0,"BUYER: What is the lowest you can sell the phone for?
+SELLER: Can you do $10?
+BUYER: How about $6?",That's too low.,,,,
+cb-test-0381-t6,381,6,electronics,Alarm clock Radio,12.0,"BUYER: How about $6?
+SELLER: That's too low.
+BUYER: $8",9?,,,,
+cb-test-0387-t0,387,0,phone,►Nokia Batteries - One new one used◄,10.0,,"Hi, are you interested in this product?",,,,
+cb-test-0387-t2,387,2,phone,►Nokia Batteries - One new one used◄,10.0,"SELLER: Hi, are you interested in this product?
+BUYER: Hello, I want the batteries! I would love them!",Cool. They are in excellent working order and are ready to be used.,,,,
+cb-test-0387-t4,387,4,phone,►Nokia Batteries - One new one used◄,10.0,"BUYER: Hello, I want the batteries! I would love them!
+SELLER: Cool. They are in excellent working order and are ready to be used.
+BUYER: Great1 Are they new?","Not brand new. But, they are in great working order. How much would you like to pay for them?",,,,
+cb-test-0387-t6,387,6,phone,►Nokia Batteries - One new one used◄,10.0,"BUYER: Great1 Are they new?
+SELLER: Not brand new. But, they are in great working order. How much would you like to pay for them?
+BUYER: I would like to pay 7.",7 dollars is a bit low. How about ten dollars?,,,,
+cb-test-0387-t8,387,8,phone,►Nokia Batteries - One new one used◄,10.0,"BUYER: I would like to pay 7.
+SELLER: 7 dollars is a bit low. How about ten dollars?
+BUYER: 9 and we have a deal!",Sounds good. let's do 9.,,,,
+cb-test-0412-t1,412,1,car,2007 Volkswagen Touareg V10 twin turbo diesel,20000.0,BUYER: I am interested in your car.  What is the best offer you have received?,"I had an offer of 17000, that's a bit too low for me, as I need to pay my debt off.",,,,
+cb-test-0412-t3,412,3,car,2007 Volkswagen Touareg V10 twin turbo diesel,20000.0,"BUYER: I am interested in your car.  What is the best offer you have received?
+SELLER: I had an offer of 17000, that's a bit too low for me, as I need to pay my debt off.
+BUYER: Thats too high for me. I can offer 14000 today cash","I can't go that low, how about 16000?",,,,
+cb-test-0412-t5,412,5,car,2007 Volkswagen Touareg V10 twin turbo diesel,20000.0,"BUYER: Thats too high for me. I can offer 14000 today cash
+SELLER: I can't go that low, how about 16000?
+BUYER: I can do 15000 and throw in a free fridge that is like new that I was going to sell",Sounds good!,,,,
+cb-test-0416-t1,416,1,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,BUYER: Hello I am interested in your listing.,"Hello, great!  we are running a special with 200.00 off.  would you like to put in an application",,,,
+cb-test-0416-t3,416,3,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,"BUYER: Hello I am interested in your listing.
+SELLER: Hello, great!  we are running a special with 200.00 off.  would you like to put in an application
+BUYER: Would that be $200 off for just the first year and then the rate would go up by $200 or more the next year?","No, the 200 would stay for the length of your lease and then would go up or stay the same based upon rental rates once you re up your lease.  we are also offering 1/2 off security deposit at this time",,,,
+cb-test-0416-t5,416,5,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,"BUYER: Would that be $200 off for just the first year and then the rate would go up by $200 or more the next year?
+SELLER: No, the 200 would stay for the length of your lease and then would go up or stay the same based upon rental rates once you re up your lease.  we are also offering 1/2 off security deposit at this time
+BUYER: Hmm ok. I notice it says ""Hardwood-style"" flooring, that means it is laminate right?",Yes that is correct,,,,
+cb-test-0416-t7,416,7,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,"BUYER: Hmm ok. I notice it says ""Hardwood-style"" flooring, that means it is laminate right?
+SELLER: Yes that is correct
+BUYER: Are there any amenities like a swimming pool or clubhouse?",we do offer swimming privileges with rent,,,,
+cb-test-0416-t9,416,9,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,"BUYER: Are there any amenities like a swimming pool or clubhouse?
+SELLER: we do offer swimming privileges with rent
+BUYER: Ok that all sounds really good. But for those amenities and the location, I'm told the rent really should be closer to the $2000 range so I'm wondering what I'm missing that is making the rate so high even with the small $200 discount...","The rent in this location is comparable to other apartments in this neighborhood.  We offer all applkiances already built into the home as well as granite countertops, walk in closets, oversized soaking tubs and a spacious area to live with `19ft lofts.  We would be willing to accept 2800.00 for the rent price",,,,
+cb-test-0416-t11,416,11,housing,Limited Time! $200 off on our two bedrooms! Apply today!,3150.0,"BUYER: Ok that all sounds really good. But for those amenities and the location, I'm told the rent really should be closer to the $2000 range so I'm wondering what I'm missing that is making the rate so high even with the small $200 discount...
+SELLER: The rent in this location is comparable to other apartments in this neighborhood.  We offer all applkiances already built into the home as well as granite countertops, walk in closets, oversized soaking tubs and a spacious area to live with `19ft lofts.  We would be willing to accept 2800.00 for the rent price
+BUYER: Well considering there are swimming privileges I think I could afford to go as high as $2750","That is very reasonable, we accept! welcome to your new home!",,,,
+cb-test-0422-t1,422,1,electronics,Alarm clock Radio,12.0,BUYER: Hi,Hi! Are you interested in my radio?,,,,
+cb-test-0422-t3,422,3,electronics,Alarm clock Radio,12.0,"BUYER: Hi
+SELLER: Hi! Are you interested in my radio?
+BUYER: Yes, I am can you tell me the condition?",It's new in box. I got it as a gift and never used it!,,,,
+cb-test-0422-t5,422,5,electronics,Alarm clock Radio,12.0,"BUYER: Yes, I am can you tell me the condition?
+SELLER: It's new in box. I got it as a gift and never used it!
+BUYER: But it does work correct?","I assume since it's never been opened. If you can't get it to work, I'll gladly let you return it!",,,,
+cb-test-0422-t7,422,7,electronics,Alarm clock Radio,12.0,"BUYER: But it does work correct?
+SELLER: I assume since it's never been opened. If you can't get it to work, I'll gladly let you return it!
+BUYER: Fair enough",I'm selling it for $12. Are you interested?,,,,
+cb-test-0422-t9,422,9,electronics,Alarm clock Radio,12.0,"BUYER: Fair enough
+SELLER: I'm selling it for $12. Are you interested?
+BUYER: Could you come down to $8?",I'd really like at least $10,,,,
+cb-test-0422-t12,422,12,electronics,Alarm clock Radio,12.0,"BUYER: Could you come down to $8?
+SELLER: I'd really like at least $10
+BUYER: Ok that seem like we are meeting in the middle and fair to both of us.",Great!,,,,
+cb-test-0429-t0,429,0,furniture,MCM Walnut Double Dresser,550.0,,Hi,,,,
+cb-test-0429-t2,429,2,furniture,MCM Walnut Double Dresser,550.0,"SELLER: Hi
+BUYER: Hello, I love the way this item looks, but the price is kind of expensive for me.","Well this is a unique piece, original varnish.",,,,
+cb-test-0429-t4,429,4,furniture,MCM Walnut Double Dresser,550.0,"BUYER: Hello, I love the way this item looks, but the price is kind of expensive for me.
+SELLER: Well this is a unique piece, original varnish.
+BUYER: I would like to pay 365 for it, because I am on a tight budget, are there any features or bonuses that make it worth more than that??",well the quality and rarity of the piece itself. but I could add in delivery for you if you pay the full price.,,,,
+cb-test-0429-t6,429,6,furniture,MCM Walnut Double Dresser,550.0,"BUYER: I would like to pay 365 for it, because I am on a tight budget, are there any features or bonuses that make it worth more than that??
+SELLER: well the quality and rarity of the piece itself. but I could add in delivery for you if you pay the full price.
+BUYER: What if I pick it up myself, could you come down in price? Say 420?",I could do it for $450 ..,,,,
+cb-test-0429-t8,429,8,furniture,MCM Walnut Double Dresser,550.0,"BUYER: What if I pick it up myself, could you come down in price? Say 420?
+SELLER: I could do it for $450 ..
+BUYER: Hrm that is still expensive for me how about 450 and you include a signed certification of authenticity and rarity for the piece ?","okay, sounds fair. It has a makers mark on the bottom but i can also sign a paper for you.",,,,
+cb-test-0430-t0,430,0,furniture,Brand New Mirrored Nightstand,75.0,,Hello,,,,
+cb-test-0430-t2,430,2,furniture,Brand New Mirrored Nightstand,75.0,"SELLER: Hello
+BUYER: Hey, I'm interested in the nightstand. The picture looks good, but does it have any issues?","Yes. It has a little crack on the side. Other than that, it is a beautiful piece",,,,
+cb-test-0430-t4,430,4,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Hey, I'm interested in the nightstand. The picture looks good, but does it have any issues?
+SELLER: Yes. It has a little crack on the side. Other than that, it is a beautiful piece
+BUYER: Which side?",On the right side. It is just a small crack and not too visible,,,,
+cb-test-0430-t6,430,6,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Which side?
+SELLER: On the right side. It is just a small crack and not too visible
+BUYER: Yeah, well a small crack in a mirror is going to turn into a big crack later. Tell you what, I'll give you $40 for it. How's that sound?",How about 60 and I'll send it to you tomorrow right away,,,,
+cb-test-0430-t8,430,8,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Yeah, well a small crack in a mirror is going to turn into a big crack later. Tell you what, I'll give you $40 for it. How's that sound?
+SELLER: How about 60 and I'll send it to you tomorrow right away
+BUYER: 55 and you got yourself a deal",ok. You drive a hard bargain. Thank you!,,,,
+cb-test-0475-t1,475,1,car,Toyota Tacoma SR 5,27500.0,"BUYER: Hello, is the truck still for sale?","Yes it is. I am asking 27500 and it is in great shape, with just one minor dent. It was just serviced a month ago and still has 65,000 miles on its warranty.",,,,
+cb-test-0486-t1,486,1,phone,►Nokia Batteries - One new one used◄,10.0,"BUYER: Hello, would you take $5 for the Nokia battery?","No, it's $10 for two batteries.",,,,
+cb-test-0486-t3,486,3,phone,►Nokia Batteries - One new one used◄,10.0,"BUYER: Hello, would you take $5 for the Nokia battery?
+SELLER: No, it's $10 for two batteries.
+BUYER: The highest I can go is $7.  Would you take that?","Okay, that will work.",,,,
+cb-test-0497-t0,497,0,housing,Single Fmly House in Pleasanton w/ Nice Neighborhod / Schools for Rent,3700.0,,Hey there!,,,,
+cb-test-0497-t3,497,3,housing,Single Fmly House in Pleasanton w/ Nice Neighborhod / Schools for Rent,3700.0,"SELLER: Hey there!
+BUYER: Hello. How old is the home?
+BUYER: Hey! How old is the home?","It is relatively new, I'm not sure on the exact age. But the house is like brand new on the inside, its very clean and fresh. The outside looks modern too. It has all the normal appliances like washer and dryer, dishwasher, stove/oven, garage, plus a large patio and spacious kitchen. Its within walking distance of Val Vista park too. We're asking for $3700 for it.",,,,
+cb-test-0497-t5,497,5,housing,Single Fmly House in Pleasanton w/ Nice Neighborhod / Schools for Rent,3700.0,"BUYER: Hey! How old is the home?
+SELLER: It is relatively new, I'm not sure on the exact age. But the house is like brand new on the inside, its very clean and fresh. The outside looks modern too. It has all the normal appliances like washer and dryer, dishwasher, stove/oven, garage, plus a large patio and spacious kitchen. Its within walking distance of Val Vista park too. We're asking for $3700 for it.
+BUYER: Thanks. $3700 is a bit high. Would you be willing to accept $1850?",Tha,,,,
+cb-test-0504-t0,504,0,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,,i am asking 2900 for large living in spacious area,,,,
+cb-test-0504-t2,504,2,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"SELLER: i am asking 2900 for large living in spacious area
+BUYER: yea its close to Metro which is noisy because of public transit. i would like to see if you can do bettr on the price",i can offer you a deal of 2500 for the best comfort in your life,,,,
+cb-test-0504-t4,504,4,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"BUYER: yea its close to Metro which is noisy because of public transit. i would like to see if you can do bettr on the price
+SELLER: i can offer you a deal of 2500 for the best comfort in your life
+BUYER: How about you remove the high speed internet, all appliances and the dishwasher and crown molding and i pay 1700",lol remove  you can give me 2399.99,,,,
+cb-test-0504-t6,504,6,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"BUYER: How about you remove the high speed internet, all appliances and the dishwasher and crown molding and i pay 1700
+SELLER: lol remove  you can give me 2399.99
+BUYER: sorry i cant afford that right now. I just need the home i dont need the stuff in it. How about you hire someone to remove the stuff and i pay for removal and you give me the place for 1550",price removal 1200 and then 1550,,,,
+cb-test-0504-t8,504,8,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"BUYER: sorry i cant afford that right now. I just need the home i dont need the stuff in it. How about you hire someone to remove the stuff and i pay for removal and you give me the place for 1550
+SELLER: price removal 1200 and then 1550
+BUYER: what do you mean ? so you will give it to me for 1550 if i pay the 1200 to remove the stuff in the place ?",yes total 2750,,,,
+cb-test-0504-t10,504,10,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"BUYER: what do you mean ? so you will give it to me for 1550 if i pay the 1200 to remove the stuff in the place ?
+SELLER: yes total 2750
+BUYER: Ok 1550 but i pay 2750 ?",amount entered would be 2750,,,,
+cb-test-0504-t12,504,12,housing,"Carports, Large Spacious Units, Recreation Area, Pool, Heating",2400.0,"BUYER: Ok 1550 but i pay 2750 ?
+SELLER: amount entered would be 2750
+BUYER: Ok how about i offer you 1700 and you take it ?",yes,,,,
+cb-test-0528-t0,528,0,electronics,Motorola Wi-Fi Pet Video Camera,50.0,,Hello.,,,,
+cb-test-0528-t2,528,2,electronics,Motorola Wi-Fi Pet Video Camera,50.0,"SELLER: Hello.
+BUYER: Hello !",How can I help?,,,,
+cb-test-0528-t4,528,4,electronics,Motorola Wi-Fi Pet Video Camera,50.0,"BUYER: Hello !
+SELLER: How can I help?
+BUYER: I am interested in purchasing the Motorola webcam","I'm starting at $50. It's in perfectly good condition. Or if you have some good booze, I'll take that in exchange, as well. Please help me destroy my liver.",,,,
+cb-test-0528-t6,528,6,electronics,Motorola Wi-Fi Pet Video Camera,50.0,"BUYER: I am interested in purchasing the Motorola webcam
+SELLER: I'm starting at $50. It's in perfectly good condition. Or if you have some good booze, I'll take that in exchange, as well. Please help me destroy my liver.
+BUYER: I would be interested in purchasing the wifi webcam for how about 25 dollars?","Unless you're throwing in some Jack Daniel's, too, the lowest I can go is $35.",,,,
+cb-test-0528-t8,528,8,electronics,Motorola Wi-Fi Pet Video Camera,50.0,"BUYER: I would be interested in purchasing the wifi webcam for how about 25 dollars?
+SELLER: Unless you're throwing in some Jack Daniel's, too, the lowest I can go is $35.
+BUYER: I will throw in a bottle of generic 5 dollar whiskey on top of 27 dollars for the Motorola Wi-Fi Pet Video Camera.",Fine.,,,,
+cb-test-0535-t0,535,0,phone,Apple iPhone 6 Plus - 16GB - Silver - UNLOCKED!!!,300.0,,I understand you are interested in my iPhone 6. What questions do you have for me?,,,,
+cb-test-0535-t2,535,2,phone,Apple iPhone 6 Plus - 16GB - Silver - UNLOCKED!!!,300.0,"SELLER: I understand you are interested in my iPhone 6. What questions do you have for me?
+BUYER: i see that it is unlocked which is a bonus. How is the casing though? Any cracks, dents or scratches?","I have had a case on it the whole time I have had it, I just took it off for the picture. It is in really good condition.",,,,
+cb-test-0535-t4,535,4,phone,Apple iPhone 6 Plus - 16GB - Silver - UNLOCKED!!!,300.0,"BUYER: i see that it is unlocked which is a bonus. How is the casing though? Any cracks, dents or scratches?
+SELLER: I have had a case on it the whole time I have had it, I just took it off for the picture. It is in really good condition.
+BUYER: Okay. 16 gigs does not seem bad, though I was looking for more storage space.","I never had a problem with running out of storage with 16 gigs. Its hard to find the 32gigs at a decent price though. I am just wanting to sell this one, I decided to upgrade to the Iphone 7.",,,,
+cb-test-0549-t0,549,0,housing,"Gorgeous 1+ bed/bath, secluded Oakland Hills duplex, private deck",2300.0,,Hey this is a great place in a great neighborhood.,,,,
+cb-test-0549-t2,549,2,housing,"Gorgeous 1+ bed/bath, secluded Oakland Hills duplex, private deck",2300.0,"SELLER: Hey this is a great place in a great neighborhood.
+BUYER: Hi I would like to offer $1150 for the Duplex, I can move in tomorrow and pay in cash.",I can do 1100 if you take all the utilities but I can only go as low as 1600.00 if I am paying the utilities.,,,,
+cb-test-0549-t4,549,4,housing,"Gorgeous 1+ bed/bath, secluded Oakland Hills duplex, private deck",2300.0,"BUYER: Hi I would like to offer $1150 for the Duplex, I can move in tomorrow and pay in cash.
+SELLER: I can do 1100 if you take all the utilities but I can only go as low as 1600.00 if I am paying the utilities.
+BUYER: I'll take that offer but you have to buy a 40 inch tv",I have the 40 inch smart tv ready to be installed so make the offer.,,,,
+cb-test-0550-t1,550,1,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,BUYER: hello,Hi,,,,
+cb-test-0550-t3,550,3,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: hello
+SELLER: Hi
+BUYER: How much for the current vehicle?",6500,,,,
+cb-test-0550-t5,550,5,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: How much for the current vehicle?
+SELLER: 6500
+BUYER: Does this car come with a warranty","If you are interested in a warranty, I can provide one.",,,,
+cb-test-0550-t7,550,7,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: Does this car come with a warranty
+SELLER: If you are interested in a warranty, I can provide one.
+BUYER: Would that be an additional feel; all I have to offer is about $5850",no additional fee for the warranty but I would need to get close to my asking price with the warranty.  I would be willing to accept $6300.,,,,
+cb-test-0550-t9,550,9,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: Would that be an additional feel; all I have to offer is about $5850
+SELLER: no additional fee for the warranty but I would need to get close to my asking price with the warranty.  I would be willing to accept $6300.
+BUYER: Beyond the listed is there anything else that would come with the car like perhaps an alarm system?",No there is no alarm system.,,,,
+cb-test-0550-t11,550,11,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: Beyond the listed is there anything else that would come with the car like perhaps an alarm system?
+SELLER: No there is no alarm system.
+BUYER: I can offer $6100",I can split the difference and meet you at $6200.,,,,
+cb-test-0550-t13,550,13,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: I can offer $6100
+SELLER: I can split the difference and meet you at $6200.
+BUYER: $6150?",$6175,,,,
+cb-test-0550-t15,550,15,car,2001 Honda Civic LX Sedan 4-Door Auto -Only 60k Miles -Clean Carfax,6500.0,"BUYER: $6150?
+SELLER: $6175
+BUYER: deal",great,,,,
+cb-test-0564-t1,564,1,bike,Adams trail-a-bike shifter 7,100.0,"BUYER: Hi, I am interested in the item you have for sale. Can you tell me a bit about it?",Yes its an awesome bike trailer for your kid like  brand  new! It has 7 gears sp you can go anywhere with it! I'm only asking 100,,,,
+cb-test-0565-t0,565,0,phone,BlackBerry Chargers,25.0,,hello there,,,,
+cb-test-0572-t1,572,1,electronics,"Panasonic 55"" Viera TC-P55VT60 Smart Plasma HDTV, Mint TV",995.0,BUYER: hello,hello,,,,
+cb-test-0572-t3,572,3,electronics,"Panasonic 55"" Viera TC-P55VT60 Smart Plasma HDTV, Mint TV",995.0,"BUYER: hello
+SELLER: hello
+BUYER: Are you interested in the tv?",I'm the one selling it,,,,
+cb-test-0572-t5,572,5,electronics,"Panasonic 55"" Viera TC-P55VT60 Smart Plasma HDTV, Mint TV",995.0,"BUYER: Are you interested in the tv?
+SELLER: I'm the one selling it
+BUYER: Okay. I'm interested in buying it. lol.",Lol okay. What kind of offer are you wanting to make?,,,,
+cb-test-0572-t7,572,7,electronics,"Panasonic 55"" Viera TC-P55VT60 Smart Plasma HDTV, Mint TV",995.0,"BUYER: Okay. I'm interested in buying it. lol.
+SELLER: Lol okay. What kind of offer are you wanting to make?
+BUYER: Well, given it's a 1080p and they go $400 new. I'll pay $350.",That's way less than what I was hoping to get. It's in mint condition. I can throw in delivery if you can go higher on it,,,,
+cb-test-0615-t1,615,1,phone,cracked screen iphone 5,50.0,BUYER: hello there,i have a nice iphone screen is craked,,,,
+cb-test-0615-t3,615,3,phone,cracked screen iphone 5,50.0,"BUYER: hello there
+SELLER: i have a nice iphone screen is craked
+BUYER: Well if it is still halfway decent, I would be able to pay $5 for it.",the phone is still brand new can you afford $40,,,,
+cb-test-0615-t5,615,5,phone,cracked screen iphone 5,50.0,"BUYER: Well if it is still halfway decent, I would be able to pay $5 for it.
+SELLER: the phone is still brand new can you afford $40
+BUYER: I apologize, I meant to type $25.  Since it is brand new still but one crack only, I will try $35?",i'll will do the $35 if you can pick it up,,,,
+cb-test-0615-t8,615,8,phone,cracked screen iphone 5,50.0,"BUYER: I apologize, I meant to type $25.  Since it is brand new still but one crack only, I will try $35?
+SELLER: i'll will do the $35 if you can pick it up
+BUYER: Sounds great",deal thanks,,,,
+cb-test-0618-t0,618,0,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,,"Hello, what do you think of my home?",,,,
+cb-test-0618-t2,618,2,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"SELLER: Hello, what do you think of my home?
+BUYER: Hi! I would like to know more about this apartment please","Absolutely! It is a beaeutiful 3 bedroom , 2 bath, 1422 square foot home, contemporary with resort amenities.",,,,
+cb-test-0618-t4,618,4,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: Hi! I would like to know more about this apartment please
+SELLER: Absolutely! It is a beaeutiful 3 bedroom , 2 bath, 1422 square foot home, contemporary with resort amenities.
+BUYER: IS it close to the groceries and restaurants/","It is near parks, boutique shops and stores yes. I am asking $3795 for it.",,,,
+cb-test-0618-t6,618,6,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: IS it close to the groceries and restaurants/
+SELLER: It is near parks, boutique shops and stores yes. I am asking $3795 for it.
+BUYER: How old is the apartment?","It is two years old, newer construction.",,,,
+cb-test-0618-t8,618,8,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: How old is the apartment?
+SELLER: It is two years old, newer construction.
+BUYER: Great! Can you go lower? I have a budget around $1800","I am willing to negotiate, but I could not go lower than $2980.",,,,
+cb-test-0618-t10,618,10,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: Great! Can you go lower? I have a budget around $1800
+SELLER: I am willing to negotiate, but I could not go lower than $2980.
+BUYER: Wow.. That is still too high. How about 2500?",I cannot go any lower.,,,,
+cb-test-0630-t0,630,0,furniture,Nice Coffee Table!,35.0,,Top of the mernin to ya.      How are you doing this fine day?,,,,
+cb-test-0630-t2,630,2,furniture,Nice Coffee Table!,35.0,"SELLER: Top of the mernin to ya.      How are you doing this fine day?
+BUYER: Im doing great! How about you? I like the coffee table, is it in good shape?","Yes, the coffee table and the two chairs Im tossing in are all in ""like-new"" condition.      Its a steal at my asking price of $35,    I paid just over $70 for all of these items from Rooms to Go about 8 months ago I just need to the room in my small studio apartment you know how it goes?     :)",,,,
+cb-test-0630-t4,630,4,furniture,Nice Coffee Table!,35.0,"BUYER: Im doing great! How about you? I like the coffee table, is it in good shape?
+SELLER: Yes, the coffee table and the two chairs Im tossing in are all in ""like-new"" condition.      Its a steal at my asking price of $35,    I paid just over $70 for all of these items from Rooms to Go about 8 months ago I just need to the room in my small studio apartment you know how it goes?     :)
+BUYER: I could do 25. I a on a budget.","Aren't we all?   LoL         Well tell you what along with the coffee table and two chairs,  I can toss in two end tables that match the coffee table and a small reading lamp  AND deliver the whole set to you directly for an even $50?     :)",,,,
+cb-test-0630-t6,630,6,furniture,Nice Coffee Table!,35.0,"BUYER: I could do 25. I a on a budget.
+SELLER: Aren't we all?   LoL         Well tell you what along with the coffee table and two chairs,  I can toss in two end tables that match the coffee table and a small reading lamp  AND deliver the whole set to you directly for an even $50?     :)
+BUYER: That would be great! You got a deal!",Excellent,,,,
+cb-test-0650-t0,650,0,housing,Stop Looking,1487.0,,Thank you for your interest,,,,
+cb-test-0650-t2,650,2,housing,Stop Looking,1487.0,"SELLER: Thank you for your interest
+BUYER: hi,the house looks good,is has 2car garage?","This is a rental condo, I'm afraid that there is no garage, but there is optional additional storage",,,,
+cb-test-0679-t0,679,0,furniture,Flush Mount Crystal Chandelier,120.0,,Hi. I see your interested in my item correct?,,,,
+cb-test-0679-t2,679,2,furniture,Flush Mount Crystal Chandelier,120.0,"SELLER: Hi. I see your interested in my item correct?
+BUYER: Yes. I was just looking for dimensions. Can you give me an estimate for how large it is?",It is about 17 inches wide and 5 inches high.,,,,
+cb-test-0679-t4,679,4,furniture,Flush Mount Crystal Chandelier,120.0,"BUYER: Yes. I was just looking for dimensions. Can you give me an estimate for how large it is?
+SELLER: It is about 17 inches wide and 5 inches high.
+BUYER: I have never purchased an item of this nature before. Would you be willing to come down in price to $85?",I could do 95 and deliver it to you this item is pretty much new never really used it.,,,,
+cb-test-0688-t1,688,1,car,Honda Accord lx -s,8400.0,BUYER: Hey. Interested in your Honda for sale. Can you tell me anything else about the vehicle,"Well, I've had it for about 3 years, but it hasn't been used very much. The wheels and the car itself is in great condition.",,,,
+cb-test-0690-t1,690,1,car,Ford Fiesta ST 2016,20000.0,"BUYER: Hi, how are you today?","Hi, I'm good.  How about you?",,,,
+cb-test-0690-t3,690,3,car,Ford Fiesta ST 2016,20000.0,"BUYER: Hi, how are you today?
+SELLER: Hi, I'm good.  How about you?
+BUYER: I am great! I'm very much interested in your ford fiesta! are there any issues?",Glad to hear it.  No issues with my car.  In fact it has every option that was available at the time I purchased it.  I'm just looking for something bigger right now which is why I'm selling it.,,,,
+cb-test-0690-t5,690,5,car,Ford Fiesta ST 2016,20000.0,"BUYER: I am great! I'm very much interested in your ford fiesta! are there any issues?
+SELLER: Glad to hear it.  No issues with my car.  In fact it has every option that was available at the time I purchased it.  I'm just looking for something bigger right now which is why I'm selling it.
+BUYER: I would really love this car, but it seems to be priced a bit high. are you willing to go a bit lower?","Like I mentioned, the car is fully loaded, low mileage, black rims, bluetooth, Sony sound, key less entry and I had mood lighting added to it as well.",,,,
+cb-test-0690-t7,690,7,car,Ford Fiesta ST 2016,20000.0,"BUYER: I would really love this car, but it seems to be priced a bit high. are you willing to go a bit lower?
+SELLER: Like I mentioned, the car is fully loaded, low mileage, black rims, bluetooth, Sony sound, key less entry and I had mood lighting added to it as well.
+BUYER: Yeah, it looked to be in great condition. If you bring the price down to 18,000 i can come pick it up tonight","You seem like a nice person so I think we can work something out.  How about 18,599?",,,,
+cb-test-0690-t10,690,10,car,Ford Fiesta ST 2016,20000.0,"BUYER: Yeah, it looked to be in great condition. If you bring the price down to 18,000 i can come pick it up tonight
+SELLER: You seem like a nice person so I think we can work something out.  How about 18,599?
+BUYER: okay, great. I will be bringing cash tonight.",I'd really prefer a cashiers check.  Thanks!  We've got a deal!,,,,
+cb-test-0694-t0,694,0,furniture,Brand New Mirrored Nightstand,75.0,,Hey there!,,,,
+cb-test-0694-t2,694,2,furniture,Brand New Mirrored Nightstand,75.0,"SELLER: Hey there!
+BUYER: Hello.  How are you?",Good thank you for asking and yourself?,,,,
+cb-test-0694-t4,694,4,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Hello.  How are you?
+SELLER: Good thank you for asking and yourself?
+BUYER: Good!  Thx for asking.  I am interested in your nightstand!  CAn you tell me a little bit about it?",Sure its a pretty piece. Its all glass and mirror like type. It has a slight damage and the drawers have become hard to open due to its time.,,,,
+cb-test-0694-t6,694,6,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Good!  Thx for asking.  I am interested in your nightstand!  CAn you tell me a little bit about it?
+SELLER: Sure its a pretty piece. Its all glass and mirror like type. It has a slight damage and the drawers have become hard to open due to its time.
+BUYER: Ok.  Does it have any other flaws?",No that's about it. I am taking it out at $75 and its reasonable considering what you're getting,,,,
+cb-test-0694-t8,694,8,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Ok.  Does it have any other flaws?
+SELLER: No that's about it. I am taking it out at $75 and its reasonable considering what you're getting
+BUYER: Ok..  I could come pick up today and have $67 cash in hand right now.",Deal sounds great!,,,,
+cb-test-0694-t11,694,11,furniture,Brand New Mirrored Nightstand,75.0,"BUYER: Ok..  I could come pick up today and have $67 cash in hand right now.
+SELLER: Deal sounds great!
+BUYER: Awesome!  Thx so much!",Sure!,,,,
+cb-test-0728-t1,728,1,furniture,Nice Coffee Table!,35.0,BUYER: Hello,"Hello, are you interested in the coffee table?",,,,
+cb-test-0728-t3,728,3,furniture,Nice Coffee Table!,35.0,"BUYER: Hello
+SELLER: Hello, are you interested in the coffee table?
+BUYER: I am. Is it in very good condition?",It is in very good condition and comes with two sturdy chairs.,,,,
+cb-test-0728-t5,728,5,furniture,Nice Coffee Table!,35.0,"BUYER: I am. Is it in very good condition?
+SELLER: It is in very good condition and comes with two sturdy chairs.
+BUYER: Great to hear. Can I stop by and take a look at it before I buy it?","Sure, I am asking 35 dollars, which is a great price for the set.",,,,
+cb-test-0728-t7,728,7,furniture,Nice Coffee Table!,35.0,"BUYER: Great to hear. Can I stop by and take a look at it before I buy it?
+SELLER: Sure, I am asking 35 dollars, which is a great price for the set.
+BUYER: Would you mind lowering the price a bit? I was hoping to pay 24 dollars for it.",The price is already pretty low but I can do 30.,,,,
+cb-test-0728-t9,728,9,furniture,Nice Coffee Table!,35.0,"BUYER: Would you mind lowering the price a bit? I was hoping to pay 24 dollars for it.
+SELLER: The price is already pretty low but I can do 30.
+BUYER: 30 will work for me. Can I pick it up today too?",Yes you can and you have a deal!,,,,
+cb-test-0737-t1,737,1,housing,Beautiful Home for Rent-Mountain House,2599.0,BUYER: hello I am very interested in renting your house,Great. It is a great home.,,,,
+cb-test-0737-t3,737,3,housing,Beautiful Home for Rent-Mountain House,2599.0,"BUYER: hello I am very interested in renting your house
+SELLER: Great. It is a great home.
+BUYER: Can you give me more details?  Is the home furnished?  Have any pets lived in the home?  Any ghosts?",No ghosts and no pets have been in the home.,,,,
+cb-test-0737-t5,737,5,housing,Beautiful Home for Rent-Mountain House,2599.0,"BUYER: Can you give me more details?  Is the home furnished?  Have any pets lived in the home?  Any ghosts?
+SELLER: No ghosts and no pets have been in the home.
+BUYER: Ok I would like to move in today, I can offer you $1250 cash",The house is not available until tomorrow and 1250  won't even touch rent in this area.  The lowest I can go is $2000,,,,
+cb-test-0737-t7,737,7,housing,Beautiful Home for Rent-Mountain House,2599.0,"BUYER: Ok I would like to move in today, I can offer you $1250 cash
+SELLER: The house is not available until tomorrow and 1250  won't even touch rent in this area.  The lowest I can go is $2000
+BUYER: Ok I can wait until tomorrow and I can offer $1300 cash and I will arrange to have all carpets shampooed and a deep clean done at the end of my lease",If you take care of the lawn too and I will have to turn off the security system.,,,,
+cb-test-0737-t9,737,9,housing,Beautiful Home for Rent-Mountain House,2599.0,"BUYER: Ok I can wait until tomorrow and I can offer $1300 cash and I will arrange to have all carpets shampooed and a deep clean done at the end of my lease
+SELLER: If you take care of the lawn too and I will have to turn off the security system.
+BUYER: It's a deal!  I will arrange for lawn service monthly.",Great,,,,
+cb-test-0745-t1,745,1,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: Hi, could you tell me a little bit more about the house?",It has 3 bedrooms and 2 baths.  The kitchen is galley but plenty of room for a few ppl to work.  1422 feet in Pleasanton CA,,,,
+cb-test-0745-t3,745,3,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: Hi, could you tell me a little bit more about the house?
+SELLER: It has 3 bedrooms and 2 baths.  The kitchen is galley but plenty of room for a few ppl to work.  1422 feet in Pleasanton CA
+BUYER: How old is the complex?","We are an older complex but we have renovated this unit.  We are asking $3795 and it comes with Cable, phone and security.",,,,
+cb-test-0745-t5,745,5,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: How old is the complex?
+SELLER: We are an older complex but we have renovated this unit.  We are asking $3795 and it comes with Cable, phone and security.
+BUYER: What other sort of amenities are available in the complex?",We have in unit washer dryer connections but not included in this price.  We have parks and lawns to have a picnic withing walking distance.,,,,
+cb-test-0745-t7,745,7,housing,Gorgeous 3 bedrooms available in August! Perfect way to end the summer,3795.0,"BUYER: What other sort of amenities are available in the complex?
+SELLER: We have in unit washer dryer connections but not included in this price.  We have parks and lawns to have a picnic withing walking distance.
+BUYER: Okay, well I was looking for a price around $1897, but it can be negotiated. Are you running any move-in specials right now?",We are having an August move in special.  The first is free!  So your first month rent wouldn't be due until September.  We also have another option of 2 year contract and we give you 1 floating month with no rent.  You chose the month you want free with a voucher.,,,,
+cb-test-0751-t0,751,0,furniture,Futon,125.0,,Hello. Are you interested in the futon I have for sale?,,,,
+cb-test-0751-t2,751,2,furniture,Futon,125.0,"SELLER: Hello. Are you interested in the futon I have for sale?
+BUYER: What is the price of the futon?","It's $125. It's in excellent condition, and I'm only selling it to make my upcoming move easier.",,,,
+cb-test-0751-t4,751,4,furniture,Futon,125.0,"BUYER: What is the price of the futon?
+SELLER: It's $125. It's in excellent condition, and I'm only selling it to make my upcoming move easier.
+BUYER: What is the least you will take if the item is bought today?",I can do $100 if you buy it today.,,,,
+cb-test-0751-t6,751,6,furniture,Futon,125.0,"BUYER: What is the least you will take if the item is bought today?
+SELLER: I can do $100 if you buy it today.
+BUYER: Could we do $85 if I pick it up at your location and load it myself?","That's fine. A little lower than I was hoping to go, but I accept.",,,,
+cb-test-0756-t1,756,1,electronics,Disabled iPhone for parts,60.0,"BUYER: Hi, how are you?","Hi, doing great! Hope you are well today!",,,,
+cb-test-0756-t3,756,3,electronics,Disabled iPhone for parts,60.0,"BUYER: Hi, how are you?
+SELLER: Hi, doing great! Hope you are well today!
+BUYER: Thank, I'm interested in your phone. Can I ask how old it is?",The phone is about a year old.,,,,
+cb-test-0756-t5,756,5,electronics,Disabled iPhone for parts,60.0,"BUYER: Thank, I'm interested in your phone. Can I ask how old it is?
+SELLER: The phone is about a year old.
+BUYER: Sounds good. Do you know if it has ever been submerged in water?",It has not had any water damage at all. The phone is in like new condition.,,,,
+cb-test-0756-t7,756,7,electronics,Disabled iPhone for parts,60.0,"BUYER: Sounds good. Do you know if it has ever been submerged in water?
+SELLER: It has not had any water damage at all. The phone is in like new condition.
+BUYER: Okay, I would like to offer $54.",I am really hoping to get the full $60 but I can do $54 if you are willing to pick up the item.,,,,
+cb-test-0756-t9,756,9,electronics,Disabled iPhone for parts,60.0,"BUYER: Okay, I would like to offer $54.
+SELLER: I am really hoping to get the full $60 but I can do $54 if you are willing to pick up the item.
+BUYER: Sounds great, I can do that!",Wonderful! We have a deal!,,,,
+cb-test-0762-t1,762,1,bike,Mint Specialized s-works epic wc,3600.0,"BUYER: hi, I am very interested in this bike","It's about 3 years old, in excellent condition, with high end performance parts. I'm looking to sell it for $3600.",,,,
+cb-test-0762-t3,762,3,bike,Mint Specialized s-works epic wc,3600.0,"BUYER: hi, I am very interested in this bike
+SELLER: It's about 3 years old, in excellent condition, with high end performance parts. I'm looking to sell it for $3600.
+BUYER: awesome, I was wondering if you would go down on price a little. could you take a little closer to 3000",I'm willing to accept your offer if you can buy it within the next 48 hours.,,,,
+cb-test-0773-t1,773,1,bike,"Bridgestone 1991 CB1, 16""medium/small,- Original and near Mint",110.0,BUYER: Hi..  How are you?,I am great! how are you>,,,,
+cb-test-0773-t3,773,3,bike,"Bridgestone 1991 CB1, 16""medium/small,- Original and near Mint",110.0,"BUYER: Hi..  How are you?
+SELLER: I am great! how are you>
+BUYER: Doing great.  Had a few questions in regards to your bike.. How long have you had it?  What kind of condition is it in?  Anything wrong with it?",There is nothing wrong it is in great condition,,,,
+cb-test-0773-t5,773,5,bike,"Bridgestone 1991 CB1, 16""medium/small,- Original and near Mint",110.0,"BUYER: Doing great.  Had a few questions in regards to your bike.. How long have you had it?  What kind of condition is it in?  Anything wrong with it?
+SELLER: There is nothing wrong it is in great condition
+BUYER: Ok..  I can come and get it now with $77 cash in hand.",The lowest I can go for this would be $85. Are you able to do that?,,,,
+cb-test-0773-t7,773,7,bike,"Bridgestone 1991 CB1, 16""medium/small,- Original and near Mint",110.0,"BUYER: Ok..  I can come and get it now with $77 cash in hand.
+SELLER: The lowest I can go for this would be $85. Are you able to do that?
+BUYER: I can go as high as $80.  Would that work??",I can do that.,,,,
+cb-test-0775-t1,775,1,furniture,MCM Walnut Double Dresser,550.0,BUYER: Hello I am interested in the credenza.,Hi there sure thing! I am selling it for $550,,,,
+cb-test-0798-t0,798,0,car,2005 Toyota Siena le,5700.0,,Hi.. How are you?,,,,
+cb-test-0798-t2,798,2,car,2005 Toyota Siena le,5700.0,"SELLER: Hi.. How are you?
+BUYER: Hello, I am doing well. I am interested in your Toyota. What condition is it in?",Great condition.  All maintenance has been up to date and just passed SMOG check.  Super clean inside and out and clear car title.,,,,
+cb-test-0798-t4,798,4,car,2005 Toyota Siena le,5700.0,"BUYER: Hello, I am doing well. I am interested in your Toyota. What condition is it in?
+SELLER: Great condition.  All maintenance has been up to date and just passed SMOG check.  Super clean inside and out and clear car title.
+BUYER: Awesome. I see you have it priced at 5700. I'm a college student and definitely in need of it. Could you possibly do with 4700?","I could do $4,950..",,,,
+cb-test-0807-t0,807,0,furniture,MCM Walnut Double Dresser,550.0,,Hello. Are you interested in this dresser?,,,,
+cb-test-0807-t2,807,2,furniture,MCM Walnut Double Dresser,550.0,"SELLER: Hello. Are you interested in this dresser?
+BUYER: I am!  Are there any stains or spots on the top?",Yes there are some chips around edges and some marks on the top surface. Its used so some of it is there,,,,
+cb-test-0807-t4,807,4,furniture,MCM Walnut Double Dresser,550.0,"BUYER: I am!  Are there any stains or spots on the top?
+SELLER: Yes there are some chips around edges and some marks on the top surface. Its used so some of it is there
+BUYER: How old is it?",1 year old,,,,
+cb-test-0807-t6,807,6,furniture,MCM Walnut Double Dresser,550.0,"BUYER: How old is it?
+SELLER: 1 year old
+BUYER: Would you be willing to negotiate with me on the price?",Yes I am open to that. What do you have in mind? I cant go too low though,,,,
+cb-test-0807-t8,807,8,furniture,MCM Walnut Double Dresser,550.0,"BUYER: Would you be willing to negotiate with me on the price?
+SELLER: Yes I am open to that. What do you have in mind? I cant go too low though
+BUYER: I'm on a strict budget, but would be willing to pay $350.  I could also come and get it.",I can do 400 last that's about 150 less than what I am selling it. I think its a fair price,,,,
+cb-test-0807-t10,807,10,furniture,MCM Walnut Double Dresser,550.0,"BUYER: I'm on a strict budget, but would be willing to pay $350.  I could also come and get it.
+SELLER: I can do 400 last that's about 150 less than what I am selling it. I think its a fair price
+BUYER: How about we meet in the middle somewhere?  $385 and I'll still come and get it.  ;)",okay 385 sounds okay to me but I am just doing that for you since you're insisting a lot!,,,,
+cb-test-0812-t0,812,0,housing,Charming Pleasanton Home: Dual Master/2.5 Bath + Pet friendly!,3300.0,,Hi you interested in the house?,,,,
+cb-test-0812-t2,812,2,housing,Charming Pleasanton Home: Dual Master/2.5 Bath + Pet friendly!,3300.0,"SELLER: Hi you interested in the house?
+BUYER: Yes, hows the floor",It;s laminate flooring,,,,
+cb-test-0812-t4,812,4,housing,Charming Pleasanton Home: Dual Master/2.5 Bath + Pet friendly!,3300.0,"BUYER: Yes, hows the floor
+SELLER: It;s laminate flooring
+BUYER: How's the area",It's very quiet but urban,,,,
+cb-test-0812-t6,812,6,housing,Charming Pleasanton Home: Dual Master/2.5 Bath + Pet friendly!,3300.0,"BUYER: How's the area
+SELLER: It's very quiet but urban
+BUYER: If I pay a years worth of rent up front, can I do 2500?",I can do 18 months for 2700,,,,
+cb-test-0823-t1,823,1,electronics,BRAND NEW KLIPSCH HOME SPEAKER(s),499.0,BUYER: Hi!,Hello,,,,
+cb-test-0823-t3,823,3,electronics,BRAND NEW KLIPSCH HOME SPEAKER(s),499.0,"BUYER: Hi!
+SELLER: Hello
+BUYER: I am interested in your speaker are you able to negotiate with me?",Yes It is Brand New In the box!,,,,
+cb-test-0823-t5,823,5,electronics,BRAND NEW KLIPSCH HOME SPEAKER(s),499.0,"BUYER: I am interested in your speaker are you able to negotiate with me?
+SELLER: Yes It is Brand New In the box!
+BUYER: Is it pretty nice and loud?",Yes! I had brought this as a gift but they already had them! I am asking $499 but I will negotiate for a fair price,,,,
+cb-test-0823-t7,823,7,electronics,BRAND NEW KLIPSCH HOME SPEAKER(s),499.0,"BUYER: Is it pretty nice and loud?
+SELLER: Yes! I had brought this as a gift but they already had them! I am asking $499 but I will negotiate for a fair price
+BUYER: Would you take 450 for them?",Ok $450 sounds fair you will not be disappointed,,,,
+cb-test-0824-t1,824,1,bike,Single speed bianchi practically new,300.0,BUYER: Hi. I am interested in your bicycle. How long have you had it for?,i have hadit for a little over a month,,,,
+cb-test-0824-t3,824,3,bike,Single speed bianchi practically new,300.0,"BUYER: Hi. I am interested in your bicycle. How long have you had it for?
+SELLER: i have hadit for a little over a month
+BUYER: Is there anything wrong with it?",nothing wrong at all pretty much new,,,,
+cb-test-0824-t5,824,5,bike,Single speed bianchi practically new,300.0,"BUYER: Is there anything wrong with it?
+SELLER: nothing wrong at all pretty much new
+BUYER: Okay. I see that you are listing it at 300. However, I can buy a new one for that. Honestly, without any sort of warranty available and the fact that it is used-I can do 150.",it actually still has over 10 months of the warranty that comes with the bike when you buy it. I will not go as low as 150. I can do 225 though,,,,
+cb-test-0824-t7,824,7,bike,Single speed bianchi practically new,300.0,"BUYER: Okay. I see that you are listing it at 300. However, I can buy a new one for that. Honestly, without any sort of warranty available and the fact that it is used-I can do 150.
+SELLER: it actually still has over 10 months of the warranty that comes with the bike when you buy it. I will not go as low as 150. I can do 225 though
+BUYER: Usually a warranty doesn't transfer if you sell it. I can do 200.","if you have any problems with it, within the next 10 months save my number. I can do 200. you will pick up tonight?",,,,
+cb-test-0834-t1,834,1,furniture,"Rosewood Dining Table, 8 chairs, Corner Cabinet",600.0,BUYER: Hello,"Hi there!  I'm selling this beautiful dining set.  It includes table, 8 chairs and the corner cabinet you can see in the back of the picture.  The price is $600.  Are you interested?",,,,
+cb-test-0834-t3,834,3,furniture,"Rosewood Dining Table, 8 chairs, Corner Cabinet",600.0,"BUYER: Hello
+SELLER: Hi there!  I'm selling this beautiful dining set.  It includes table, 8 chairs and the corner cabinet you can see in the back of the picture.  The price is $600.  Are you interested?
+BUYER: Yes please. It is beautiful. Any marks , scratches etc?",It's in perfect condition! I've only had it for a few years.  It's from a non-smoking/non-pet home.  I'm only selling because I'm moving and can't take it with me.,,,,
+cb-test-0834-t5,834,5,furniture,"Rosewood Dining Table, 8 chairs, Corner Cabinet",600.0,"BUYER: Yes please. It is beautiful. Any marks , scratches etc?
+SELLER: It's in perfect condition! I've only had it for a few years.  It's from a non-smoking/non-pet home.  I'm only selling because I'm moving and can't take it with me.
+BUYER: Okay, Will you deliver or must I pick up?",I can deliver if you're willing to pay full price of $600.  Will that work for you?,,,,
+cb-test-0834-t7,834,7,furniture,"Rosewood Dining Table, 8 chairs, Corner Cabinet",600.0,"BUYER: Okay, Will you deliver or must I pick up?
+SELLER: I can deliver if you're willing to pay full price of $600.  Will that work for you?
+BUYER: I will need to pick up then, I do not have $600 at the moment. I can do $550.",That works for me!,,,,
