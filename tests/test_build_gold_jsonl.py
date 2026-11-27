@@ -46,7 +46,9 @@ def test_build_labels_history_and_limits(tmp_path):
 
 
 def _extra_workbook(path, checked):
-    from openpyxl import Workbook
+    import pytest
+
+    Workbook = pytest.importorskip("openpyxl").Workbook
 
     wb = Workbook()
     wb.remove(wb.active)
