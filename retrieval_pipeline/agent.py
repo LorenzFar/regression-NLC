@@ -17,7 +17,7 @@ from .pipeline import Pipeline
 ROOT = Path(__file__).resolve().parent.parent
 CORPUS_BANK = ROOT / "examples" / "craigslist_bank.jsonl"
 FIXTURE_BANK = ROOT / "examples" / "approved_fixture_bank.jsonl"
-DEFAULT_CHECKPOINT = ROOT / "models" / "nlu_k2_s0.pt"
+DEFAULT_CHECKPOINT = ROOT / "models" / "nlu_k3_s1.pt"
 
 
 def default_bank() -> Path:
